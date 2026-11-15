@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dartpro-cache-dynamic-v6';
+const CACHE_NAME = 'dartpro-cache-dynamic-v7';
 const APP_FILES = ['./', './index.html', './manifest.json', './icon.png', './dartpro-data.json'];
 const APP_URLS = new Set(APP_FILES.map(path => new URL(path, self.registration.scope).href));
 
