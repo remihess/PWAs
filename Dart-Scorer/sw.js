@@ -1,51 +1,39 @@
-const CACHE_NAME = 'dartpro-cache-dynamic-v3';
-const urlsToCache = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon.png'
-];
+const CACHE_NAME = 'dartpro-cache-dynamic-v5';
+const APP_FILES = ['./', './index.html', './manifest.json', './icon.png', './dartpro-data.json'];
+const APP_URLS = new Set(APP_FILES.map(path => new URL(path, self.registration.scope).href));
 
-// Installiert die App lokal und zwingt den Browser zum sofortigen Update
 self.addEventListener('install', event => {
-  self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(urlsToCache);
-      })
-  );
+    event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_FILES)).then(() => self.skipWaiting()));
 });
 
-// Räumt alte Instanzen auf und übernimmt sofort die Kontrolle
 self.addEventListener('activate', event => {
-  event.waitUntil(self.clients.claim());
+    event.waitUntil((async () => {
+        const keys = await caches.keys();
+        await Promise.all(keys.filter(key => key.startsWith('dartpro-cache-dynamic-') && key !== CACHE_NAME)
+            .map(key => caches.delete(key)));
+        await self.clients.claim();
+    })());
 });
 
-// Intelligentes Laden: Network-First mit automatischem Cache-Update
 self.addEventListener('fetch', event => {
-  // Ignoriere Anfragen, die nicht über HTTP/HTTPS laufen (verhindert Fehler)
-  if (!event.request.url.startsWith('http')) return;
+    const request = event.request;
+    const url = new URL(request.url);
+    const navigation = request.mode === 'navigate' && url.href.startsWith(self.registration.scope);
+    if (request.method !== 'GET' || (!navigation && !APP_URLS.has(url.href))) return;
 
-  let fetchRequest = event.request;
-  // Zwinge den Browser bei der HTML-Datei absolut immer ins Netz zu gehen (ignoriert den internen Handy-Cache)
-  if (event.request.mode === 'navigate') {
-    fetchRequest = new Request(event.request.url, { cache: 'no-store' });
-  }
-
-  event.respondWith(
-    fetch(fetchRequest)
-      .then(response => {
-        // Wenn wir online sind: Antwort klonen und den Cache im Hintergrund IMMER aktuell halten!
-        if (response && response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
-        }
-        return response;
-      })
-      .catch(() => {
-        // Wenn wir offline sind: Lade die zuletzt gespeicherte Version aus dem Cache
-        return caches.match(event.request);
-      })
-  );
+    event.respondWith((async () => {
+        const cache = await caches.open(CACHE_NAME);
+        let response;
+        try {
+            response = await fetch(request, { cache: 'no-cache' });
+            if (response.ok) {
+                try { await cache.put(request, response.clone()); } catch (error) {}
+                return response;
+            }
+        } catch (error) {}
+        return await cache.match(request)
+            || (navigation && await cache.match('./index.html'))
+            || response
+            || Response.error();
+    })());
 });
