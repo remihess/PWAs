@@ -246,7 +246,7 @@
             </select>
         </div>
         <div class="setting-item" id="settings-cups">
-            <label for="set-cups">Becher pro Seite</label>
+            <label for="set-cups">Startbecher pro Seite</label>
             <select id="set-cups">
                 <option value="6">6 Becher</option>
                 <option value="10" selected>10 Becher</option>
@@ -312,6 +312,7 @@
     <div id="tab3" class="tab-content">
         <div class="main-card">
             <h2>Spielplan Vorrunde</h2>
+            <p class="sport-badge" id="preliminary-cups" hidden></p>
             <div class="form-group schedule-actions">
                 <select id="schedule-mode" aria-label="Spielplan-Modus">
                     <option value="auto">Automatisch generieren</option>
@@ -400,17 +401,20 @@
 
         function sportKey() { return byId('set-sport').value; }
         function sport() { return sports[sportKey()]; }
-        function scoreLimit() { return sportKey() === 'bierpong' ? Number(byId('set-cups').value) : Infinity; }
         function positiveInteger(id, minimum = 1) {
             const value = Number(byId(id).value);
             return Number.isSafeInteger(value) && value >= minimum ? value : null;
         }
 
         function syncControls() {
-            byId('settings-cups').hidden = sportKey() !== 'bierpong';
+            const isBierpong = sportKey() === 'bierpong';
+            const startingCups = `${byId('set-cups').value} Startbecher pro Seite`;
+            byId('settings-cups').hidden = !isBierpong;
+            byId('preliminary-cups').hidden = !isBierpong;
+            byId('preliminary-cups').textContent = startingCups;
             byId('tables-label').textContent = 'Anzahl ' + sport().venues;
             byId('standings-score-unit').textContent = sport().unit;
-            byId('ko-score-unit').textContent = sport().name + ' · ' + sport().unit;
+            byId('ko-score-unit').textContent = `${sport().name} · ${isBierpong ? startingCups : sport().unit}`;
             byId('max-team-display').textContent = byId('set-max-teams').value;
             for (const id of settings) {
                 byId(id).disabled = Boolean(id === 'set-ko-size' ? koState.length : preliminary);
@@ -718,9 +722,8 @@
 
         function scoreInputHTML(prefix, match, side, disabled, label) {
             const value = match['score' + side] ?? '';
-            const max = sportKey() === 'bierpong' ? `max="${scoreLimit()}"` : '';
             const css = prefix.startsWith('ko-') ? 'ko-score-input' : 'match-score-input';
-            return `<input type="number" min="0" ${max} step="1" inputmode="numeric" class="${css}"
+            return `<input type="number" min="0" step="1" inputmode="numeric" class="${css}"
                 id="${prefix}-score${side}" aria-label="${sport().unit} ${label}" aria-describedby="${prefix}-error"
                 value="${value}" ${disabled ? 'disabled' : ''} oninput="enterScore('${prefix}', '${side}', this)">`;
         }
@@ -753,7 +756,7 @@
             const errors = byId(prefix + '-error');
             let error = '';
             if (inputs.some(invalidScore)) {
-                error = sportKey() === 'bierpong' ? `Ganze Zahl von 0 bis ${scoreLimit()} eingeben.` : 'Eine ganze, nichtnegative Zahl eingeben.';
+                error = 'Eine ganze, nichtnegative Zahl eingeben.';
             } else if (knockout && match.scoreA !== null && match.scoreA === match.scoreB) {
                 error = 'Die K.-o.-Partie braucht einen Sieger.';
             }
