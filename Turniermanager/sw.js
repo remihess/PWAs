@@ -1,6 +1,6 @@
 const scope = self.registration.scope;
 const CACHE_PREFIX = 'turniermanager-' + scope + '-';
-const CACHE_NAME = CACHE_PREFIX + 'v5';
+const CACHE_NAME = CACHE_PREFIX + 'v8';
 const INDEX_URL = new URL('index.html', scope).href;
 const APP_SHELL = ['index.html', 'tournament.js', 'manifest.json', 'icon.png']
     .map(path => new URL(path, scope).href);

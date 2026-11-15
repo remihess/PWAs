@@ -167,6 +167,7 @@
             margin-top: 90px; /* Schiebt das SP3 proportional nach unten, unabhängig von der Bildschirmhöhe */
             z-index: 10;
         }
+        .final-view .place3-wrapper { position: static; margin-top: 0; }
         
         .match-box.finale-box { border: 2px solid var(--accent-orange); box-shadow: 0 0 20px rgba(234, 88, 12, 0.15); }
         .match-box.place3-box { border-style: dashed; border-color: var(--border-color); opacity: 0.9; }
@@ -179,7 +180,9 @@
         .summary-score { font-size: 20px; font-weight: bold; width: 40px; text-align: center; flex-shrink: 0; }
 
         /* Buttons */
-        #advance-btn-container { position: absolute; bottom: 0; right: 0; padding: 20px; }
+        .ko-actions { align-items: center; margin: 12px 0; }
+        .ko-result-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 0 0; }
+        .ko-result-actions button { padding: 6px 9px; font-size: 11px; }
         #reset-tournament-btn { position: fixed; top: 20px; right: 20px; z-index: 1000; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3); display: none; }
 
         /* --- WINNER MODAL --- */
@@ -235,6 +238,7 @@
     <button id="reset-tournament-btn" class="action-btn action-btn-danger" onclick="resetTournament()">🔄 Neues Turnier</button>
 
     <h1>🏆 Turnier-Manager</h1>
+    <p class="schedule-status schedule-warning" id="storage-warning" role="status" hidden></p>
 
     <div class="settings-bar">
         <div class="setting-item">
@@ -300,6 +304,7 @@
     <div id="tab2" class="tab-content">
         <div class="main-card">
             <h2>Tabelle (Vorrunde)</h2>
+            <p class="schedule-status schedule-warning" id="standings-tie" aria-live="polite" hidden></p>
             <div class="table-wrapper">
                 <table id="standings-table" class="fancy-table">
                     <thead><tr><th>#</th><th>Team</th><th>Partien</th><th>Pkt</th><th>Diff</th><th id="standings-score-unit">Becher</th></tr></thead>
@@ -332,8 +337,12 @@
             <p class="sport-badge" id="ko-score-unit"></p>
             <div class="ko-bracket-wrapper" id="ko-bracket-main"></div>
             
-            <div id="advance-btn-container" style="display:none;">
-                <button class="action-btn action-btn-green" id="advance-round-btn" onclick="advanceRound()" style="font-size: 16px; padding: 15px 30px; box-shadow: 0 0 15px var(--accent-green-glow);">Übergang</button>
+            <p class="schedule-status" id="ko-pending-note" aria-live="polite" hidden>Speichere oder verwirf deine Änderungen, um fortzufahren.</p>
+            <div class="form-group ko-actions">
+                <button class="action-btn" id="previous-round-btn" onclick="changeKnockoutRound(-1)" hidden>Vorherige Runde</button>
+                <button class="action-btn action-btn-green" id="advance-round-btn" onclick="changeKnockoutRound(1)" hidden>Nächste Runde</button>
+                <button class="action-btn action-btn-green" id="finish-knockout-btn" onclick="finishKnockout()" hidden>Turnier abschließen</button>
+                <button class="action-btn" id="edit-knockout-btn" onclick="editKnockout()" hidden>Ergebnisse korrigieren</button>
             </div>
         </div>
     </div>
@@ -367,6 +376,13 @@
         let currentKoRound = 0;
         let isSummaryMode = false;
 
+        function showStorageWarning(message, error) {
+            const warning = byId('storage-warning');
+            warning.textContent = message;
+            warning.hidden = false;
+            console.warn(message, error);
+        }
+
         function saveTournament() {
             try {
                 localStorage.setItem(storageKey, JSON.stringify({
@@ -374,23 +390,28 @@
                     currentKoRound, isSummaryMode,
                     settings: Object.fromEntries(settings.map(id => [id, byId(id).value]))
                 }));
+                byId('storage-warning').hidden = true;
             } catch (error) {
-                console.warn('Das Turnier konnte lokal nicht gespeichert werden.', error);
+                showStorageWarning('Der aktuelle Turnierstand konnte nicht im Browser gespeichert werden.', error);
             }
         }
 
         function restoreTournament() {
-            let saved;
             try {
-                saved = JSON.parse(localStorage.getItem(storageKey));
+                const raw = localStorage.getItem(storageKey);
+                if (raw === null) return;
+                const saved = JSON.parse(raw);
+                if (!Array.isArray(saved?.teams) || !Array.isArray(saved.matchesVorrunde) ||
+                    !Array.isArray(saved.koState) || !saved.p3State || !saved.settings) {
+                    throw new TypeError('Ungültiger Turnierstand');
+                }
+                ({ teams, teamIdCounter, matchesVorrunde, preliminary, koSizeActual, koState, p3State,
+                    currentKoRound, isSummaryMode } = saved);
+                for (const id of settings) byId(id).value = saved.settings[id];
+                if (preliminary) byId('schedule-mode').value = preliminary.mode;
             } catch (error) {
-                console.warn('Der gespeicherte Spielstand konnte nicht gelesen werden.', error);
+                showStorageWarning('Der gespeicherte Turnierstand konnte nicht geladen werden.', error);
             }
-            if (!saved) return;
-            ({ teams, teamIdCounter, matchesVorrunde, preliminary, koSizeActual, koState, p3State,
-                currentKoRound, isSummaryMode } = saved);
-            for (const id of settings) byId(id).value = saved.settings[id];
-            if (preliminary) byId('schedule-mode').value = preliminary.mode;
         }
 
         function escapeHTML(value) {
@@ -413,7 +434,7 @@
             byId('preliminary-cups').hidden = !isBierpong;
             byId('preliminary-cups').textContent = startingCups;
             byId('tables-label').textContent = 'Anzahl ' + sport().venues;
-            byId('standings-score-unit').textContent = sport().unit;
+            byId('standings-score-unit').textContent = isBierpong ? 'Becher ohne Verlängerung' : sport().unit;
             byId('ko-score-unit').textContent = `${sport().name} · ${isBierpong ? startingCups : sport().unit}`;
             byId('max-team-display').textContent = byId('set-max-teams').value;
             for (const id of settings) {
@@ -502,7 +523,7 @@
             isSummaryMode = false;
             byId('winner-modal').style.display = 'none';
             byId('ko-bracket-main').innerHTML = '';
-            byId('advance-btn-container').style.display = 'none';
+            renderKnockoutActions();
             syncControls();
             renderTeamsList();
             renderPreliminary();
@@ -516,19 +537,32 @@
         }
 
         function calculateStats() {
+            const startingCups = sportKey() === 'bierpong' ? Number(byId('set-cups').value) : null;
             const stats = new Map(teams.map(t => [t.id, { ...t, played: 0, pkt: 0, scored: 0, diff: 0 }]));
             for (const match of matchesVorrunde) {
                 const a = stats.get(match.teamA);
                 const b = stats.get(match.teamB);
                 if (!a || !b || !hasResult(match)) continue;
+                const rawDiff = match.scoreA - match.scoreB;
+                const overtime = startingCups !== null && Math.max(match.scoreA, match.scoreB) > startingCups;
+                const diff = overtime ? Math.sign(rawDiff) : rawDiff;
                 a.played++; b.played++;
-                a.scored += match.scoreA; b.scored += match.scoreB;
-                a.diff += match.scoreA - match.scoreB;
-                b.diff += match.scoreB - match.scoreA;
-                if (match.scoreA > match.scoreB) a.pkt++;
-                if (match.scoreB > match.scoreA) b.pkt++;
+                a.scored += overtime ? Math.min(match.scoreA, startingCups) : match.scoreA;
+                b.scored += overtime ? Math.min(match.scoreB, startingCups) : match.scoreB;
+                a.diff += diff;
+                b.diff -= diff;
+                if (rawDiff > 0) a.pkt++;
+                if (rawDiff < 0) b.pkt++;
             }
-            return [...stats.values()].sort((a, b) => b.pkt - a.pkt || b.diff - a.diff || b.scored - a.scored);
+            return [...stats.values()].sort(compareStats);
+        }
+
+        function compareStats(a, b) {
+            return b.pkt - a.pkt || b.diff - a.diff || b.scored - a.scored;
+        }
+
+        function tieAtCutoff(standings, size) {
+            return size > 0 && size < standings.length && compareStats(standings[size - 1], standings[size]) === 0;
         }
 
         function getKoSize() {
@@ -538,12 +572,22 @@
 
         function renderStandings() {
             const size = getKoSize();
-            const rows = calculateStats().map((t, i) => `
+            const standings = calculateStats();
+            const tie = byId('standings-tie');
+            const atCutoff = preliminary && standings.every(team => team.played === preliminary.gamesPerTeam) &&
+                tieAtCutoff(standings, size);
+            tie.hidden = !atCutoff;
+            tie.textContent = atCutoff ? 'Gleichstand an der K.-o.-Grenze. Bei gleicher Wertung entscheidet die Reihenfolge der Teamanmeldung.' : '';
+            let place = 0;
+            const rows = standings.map((t, i) => {
+                if (i === 0 || compareStats(standings[i - 1], t) !== 0) place = i + 1;
+                return `
                 <tr class="${i < size ? 'qualified' : ''} ${i + 1 === size && size < teams.length ? 'cutoff-line' : ''}">
-                    <td><b>${i + 1}</b></td><td><b>${escapeHTML(t.name)}</b></td><td>${t.played}</td>
+                    <td><b>${place}</b></td><td><b>${escapeHTML(t.name)}</b></td><td>${t.played}</td>
                     <td style="color:var(--accent-blue); font-weight:bold;">${t.pkt}</td>
                     <td>${t.diff > 0 ? '+' : ''}${t.diff}</td><td>${t.scored}</td>
-                </tr>`);
+                </tr>`;
+            });
             document.querySelector('#standings-table tbody').innerHTML =
                 rows.join('') || '<tr><td colspan="6">Keine Teams eingetragen.</td></tr>';
         }
@@ -552,7 +596,10 @@
             if (koState.length) return;
             const tables = positiveInteger('set-tables');
             const gamesPerTeam = positiveInteger('set-vorrunde-matches');
+            const maxTeams = positiveInteger('set-max-teams', 2);
             if (teams.length < 2) return alert('Mindestens zwei Teams werden benötigt.');
+            if (maxTeams === null) return alert('Bitte eine gültige maximale Teamzahl ab 2 eingeben.');
+            if (teams.length > maxTeams) return alert(`${teams.length} Teams sind eingetragen. Erhöhe die maximale Teamzahl oder entferne Teams.`);
             if (gamesPerTeam === null) return alert('Bitte eine gültige Spielanzahl pro Team eingeben.');
             const count = fixtureCount(teams.length, gamesPerTeam);
             if (count === null) return alert(planCountMessage(gamesPerTeam));
@@ -722,10 +769,12 @@
 
         function scoreInputHTML(prefix, match, side, disabled, label) {
             const value = match['score' + side] ?? '';
-            const css = prefix.startsWith('ko-') ? 'ko-score-input' : 'match-score-input';
+            const knockout = prefix.startsWith('ko-');
+            const css = knockout ? 'ko-score-input' : 'match-score-input';
+            const action = knockout ? `previewKnockoutScore('${prefix}')` : `enterScore('${prefix}', '${side}', this)`;
             return `<input type="number" min="0" step="1" inputmode="numeric" class="${css}"
                 id="${prefix}-score${side}" aria-label="${sport().unit} ${label}" aria-describedby="${prefix}-error"
-                value="${value}" ${disabled ? 'disabled' : ''} oninput="enterScore('${prefix}', '${side}', this)">`;
+                value="${value}" ${disabled ? 'disabled' : ''} oninput="${action}">`;
         }
 
         function scoreErrorHTML(prefix) {
@@ -750,24 +799,59 @@
             const match = findScoreMatch(prefix);
             if (!match) return;
             match['score' + side] = input.value === '' || invalidScore(input) ? null : Number(input.value);
-            const knockout = prefix.startsWith('ko-');
-            const complete = hasResult(match, knockout);
+            const complete = hasResult(match);
             const inputs = ['A', 'B'].map(side => byId(prefix + '-score' + side));
-            const errors = byId(prefix + '-error');
-            let error = '';
-            if (inputs.some(invalidScore)) {
-                error = 'Eine ganze, nichtnegative Zahl eingeben.';
-            } else if (knockout && match.scoreA !== null && match.scoreA === match.scoreB) {
-                error = 'Die K.-o.-Partie braucht einen Sieger.';
-            }
-            errors.textContent = error;
-            errors.hidden = !error;
+            showScoreError(prefix, inputs.some(invalidScore) ? 'Eine ganze, nichtnegative Zahl eingeben.' : '');
 
             byId(prefix + '-rowA').classList.toggle('winner-row', complete && match.scoreA > match.scoreB);
             byId(prefix + '-rowB').classList.toggle('winner-row', complete && match.scoreB > match.scoreA);
-            if (knockout) updateKnockoutResult(prefix, match, complete);
-            else updatePlanStatus();
+            updatePlanStatus();
             saveTournament();
+        }
+
+        function showScoreError(prefix, message) {
+            const error = byId(prefix + '-error');
+            error.textContent = message;
+            error.hidden = !message;
+        }
+
+        function previewKnockoutScore(prefix) {
+            const match = findScoreMatch(prefix);
+            if (!match) return null;
+            const inputs = ['A', 'B'].map(side => byId(prefix + '-score' + side));
+            const [scoreA, scoreB] = inputs.map(input => input.value === '' ? null : Number(input.value));
+            const invalid = inputs.some(invalidScore);
+            const changed = invalid || scoreA !== match.scoreA || scoreB !== match.scoreB;
+            let message = '';
+            if (invalid) message = 'Eine ganze, nichtnegative Zahl eingeben.';
+            else if (scoreA !== null && scoreA === scoreB) message = 'Die K.-o.-Partie braucht einen Sieger.';
+            else if (changed && (scoreA === null) !== (scoreB === null)) message = 'Gib beide Spielstände ein oder leere beide Felder.';
+            showScoreError(prefix, message);
+            byId(prefix).classList.toggle('pending-ko-score', changed);
+            byId(prefix + '-save').disabled = !changed || Boolean(message);
+            byId(prefix + '-discard').hidden = !changed;
+            renderKnockoutActions();
+            return changed && !message ? { scoreA, scoreB } : null;
+        }
+
+        function saveKnockoutScore(prefix) {
+            const scores = previewKnockoutScore(prefix);
+            if (!scores) return;
+            const match = findScoreMatch(prefix);
+            Object.assign(match, scores);
+            const complete = hasResult(match, true);
+            byId(prefix + '-rowA').classList.toggle('winner-row', complete && match.scoreA > match.scoreB);
+            byId(prefix + '-rowB').classList.toggle('winner-row', complete && match.scoreB > match.scoreA);
+            updateKnockoutResult(prefix, match, complete);
+            previewKnockoutScore(prefix);
+            saveTournament();
+        }
+
+        function discardKnockoutScore(prefix) {
+            const match = findScoreMatch(prefix);
+            if (!match) return;
+            for (const side of ['A', 'B']) byId(prefix + '-score' + side).value = match['score' + side] ?? '';
+            previewKnockoutScore(prefix);
         }
 
         // --- KO PHASE LOGIC ---
@@ -805,11 +889,14 @@
             if (complete !== matchesVorrunde.length) return alert('Erfasse und werte zuerst alle Vorrundenergebnisse.');
 
             const size = getKoSize();
-            if (size !== Number(byId('set-ko-size').value) &&
-                !confirm(`Für die gewählte K.-o.-Größe fehlen Teams. Mit Top ${size} starten?`)) return;
+            const standings = calculateStats();
+            const notes = [];
+            if (size !== Number(byId('set-ko-size').value)) notes.push('Für die gewählte K.-o.-Größe fehlen Teams.');
+            if (tieAtCutoff(standings, size)) notes.push('An der K.-o.-Grenze entscheidet bei Gleichstand die Reihenfolge der Teamanmeldung.');
+            if (notes.length && !confirm(`${notes.join('\n')}\nMit Top ${size} starten?`)) return;
             koSizeActual = size;
             byId('set-ko-size').value = size;
-            const topTeams = calculateStats().slice(0, size);
+            const topTeams = standings.slice(0, size);
             const seeds = getKoSeeds(size);
             koState = Array.from({ length: Math.log2(size) }, (_, round) =>
                 Array.from({ length: size / (2 ** (round + 1)) }, (_, match) => {
@@ -838,7 +925,7 @@
             container.innerHTML = "";
             if (koSizeActual === 2) {
                 container.innerHTML = `<div class="solo-final">${createMatchBoxHTML(0, 0, koState[0][0], '')}</div>`;
-                checkAdvanceButton();
+                renderKnockoutActions();
                 return;
             }
             let r = currentKoRound;
@@ -905,7 +992,7 @@
             wrapper.appendChild(colsContainer);
             container.appendChild(wrapper);
 
-            checkAdvanceButton();
+            renderKnockoutActions();
         }
 
         function createMatchBoxHTML(r, m, match, extraClass) {
@@ -938,6 +1025,10 @@
                     <div class="match-title">${title}</div>
                     ${rows.join('')}
                     ${scoreErrorHTML(prefix)}
+                    ${disabled ? '' : `<div class="ko-result-actions">
+                        <button class="action-btn" id="${prefix}-save" onclick="saveKnockoutScore('${prefix}')" disabled>Speichern</button>
+                        <button class="action-btn" id="${prefix}-discard" onclick="discardKnockoutScore('${prefix}')" hidden>Verwerfen</button>
+                    </div>`}
                 </div>
             </div>`;
         }
@@ -956,8 +1047,6 @@
                 byId(`match-pair-${r}-${pair}`)?.classList.toggle('winner-path', Boolean(hasWinner));
                 if (previous !== match.winner) propagateKnockout(r, m);
             }
-            checkAdvanceButton();
-            checkTournamentEnd();
         }
 
         function propagateKnockout(round, index) {
@@ -989,36 +1078,48 @@
             }
         }
 
-        function checkAdvanceButton() {
-            let numRounds = Math.log2(koSizeActual);
-            let allDone = koState[currentKoRound].every(x => x.winner !== null);
-            let btnContainer = document.getElementById('advance-btn-container');
-            
-            if (allDone && currentKoRound < numRounds - 2) {
-                let btn = document.getElementById('advance-round-btn');
-                btn.innerText = `Übergang ins ${getMatchName(currentKoRound + 1, 0, numRounds, true)}`;
-                btnContainer.style.display = 'block';
-            } else {
-                btnContainer.style.display = 'none';
-            }
+        function hasPendingKnockoutScore() {
+            return document.querySelectorAll('.pending-ko-score').length > 0;
         }
 
-        function advanceRound() {
-            if (currentKoRound >= koState.length - 2 || !koState[currentKoRound].every(match => match.winner)) return;
-            currentKoRound++;
+        function knockoutComplete() {
+            return Boolean(koState.at(-1)?.[0].winner && (koSizeActual === 2 || p3State.winner));
+        }
+
+        function renderKnockoutActions() {
+            const active = koState.length > 0 && !isSummaryMode;
+            const pending = active && hasPendingKnockoutScore();
+            const lastView = Math.max(0, koState.length - 2);
+            const previous = byId('previous-round-btn');
+            const next = byId('advance-round-btn');
+            const finish = byId('finish-knockout-btn');
+            previous.hidden = !active || currentKoRound === 0;
+            next.hidden = !active || currentKoRound >= lastView || !koState[currentKoRound].every(match => match.winner);
+            finish.hidden = !active || currentKoRound !== lastView || !knockoutComplete();
+            previous.disabled = next.disabled = finish.disabled = pending;
+            byId('edit-knockout-btn').hidden = !isSummaryMode;
+            byId('ko-pending-note').hidden = !pending;
+            if (!next.hidden) next.textContent = `Weiter zum ${getMatchName(currentKoRound + 1, 0, koState.length, true)}`;
+        }
+
+        function changeKnockoutRound(step) {
+            const round = currentKoRound + step;
+            if (round < 0 || round > koState.length - 2 || hasPendingKnockoutScore()) return;
+            if (step > 0 && !koState[currentKoRound].every(match => match.winner)) return;
+            currentKoRound = round;
             renderActiveKoRound();
             saveTournament();
         }
 
-        function checkTournamentEnd(celebrate = true) {
-            const final = koState.at(-1)[0];
-            if (final.winner && (koSizeActual === 2 || p3State.winner)) triggerWinner(final.winner, celebrate);
+        function finishKnockout() {
+            if (!knockoutComplete() || hasPendingKnockoutScore()) return;
+            triggerWinner(koState.at(-1)[0].winner);
         }
 
-        function triggerWinner(teamName, celebrate) {
+        function triggerWinner(teamName) {
             byId('winner-name').textContent = teamName;
             byId('winner-modal').style.display = 'flex';
-            if (!celebrate || typeof window.confetti !== 'function') return;
+            if (typeof window.confetti !== 'function') return;
             const end = Date.now() + 4000;
             (function frame() {
                 window.confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#2563eb', '#16a34a', '#ea580c'] });
@@ -1027,13 +1128,20 @@
             }());
         }
 
+        function editKnockout() {
+            isSummaryMode = false;
+            byId('ko-main-title').textContent = 'Turnierbaum';
+            renderActiveKoRound();
+            saveTournament();
+        }
+
         function showSummaryView() {
+            if (!knockoutComplete() || hasPendingKnockoutScore()) return;
             isSummaryMode = true;
             saveTournament();
             byId('winner-modal').style.display = 'none';
             document.getElementById('ko-main-title').innerText = "Turnierbaum (Zusammenfassung)";
-            document.getElementById('advance-btn-container').style.display = 'none';
-            document.getElementById('reset-tournament-btn').style.display = 'block'; 
+            renderKnockoutActions();
             
             let container = document.getElementById('ko-bracket-main');
             container.innerHTML = "";
@@ -1146,10 +1254,7 @@
         if (koState.length) {
             switchTab('tab4', byId('btn-tab4'));
             if (isSummaryMode) showSummaryView();
-            else {
-                renderActiveKoRound();
-                checkTournamentEnd(false);
-            }
+            else renderActiveKoRound();
         } else if (preliminary) {
             switchTab('tab3', document.querySelectorAll('.tab-btn')[2]);
         }
