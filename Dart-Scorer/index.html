@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DartPro</title>
 
     <link rel="manifest" href="manifest.json">
@@ -24,18 +24,7 @@
             --accent-orange: #fbbf24; --checkout-tint: #30281c; --checkout-border: #786036;
             --keypad-hover: #475569; --keypad-pressed: #64748b; --overlay-bg: rgba(15, 23, 42, 0.95);
             --radius-lg: 16px; --radius-md: 8px; --transition: all 0.2s ease;
-            /* ── Checkout-Kästen: Fine-Tuning-Variablen ──────────────────── */
-            --checkout-area-h:    90px;    /* Gesamthöhe der Box-Zone          */
-            --checkout-route-fs:  2.75rem; /* Schrift: Hauptroute (T20 - D12)  */
-            --checkout-sub-fs:    0.72rem; /* Schrift: "→ NEXT" Label          */
-            --checkout-finish-fs: 0.9rem;  /* Schrift: Finish-Zeile im Setup   */
-            --checkout-box-gap:   8px;     /* Abstand zwischen Kästen          */
-            --checkout-box-pad:   6px 10px;/* Innenabstand jedes Kastens       */
-            --checkout-box-r:     10px;    /* Border-Radius der Kästen         */
-            --checkout-border-w:  2px;     /* Randstärke der Kästen            */
-            --checkout-setup-fs:  2.3rem;  /* Schrift: Setup-Darts (links vom Pfeil)   */
-            --checkout-arrow-size:16px;    /* Größe des Pfeil-Icons                    */
-            --checkout-setup-gap: 6px;     /* Abstand zw. Setup-Text, Pfeil, Finish    */
+
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
@@ -56,7 +45,7 @@
         body.light-mode input[type="text"],
         body.light-mode input[type="number"],
         body.light-mode select { color: #0f172a; }
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-base); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-size: 20px; touch-action: pan-x pan-y; transition: background-color 0.2s, color 0.2s; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-base); color: var(--text-main); height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; font-size: 20px; touch-action: pan-x pan-y; transition: background-color 0.2s, color 0.2s; }
 
         /* --- HUB SCREENS --- */
         #hub-screen { display: flex; flex-direction: column; height: 100%; overflow-y: auto; }
@@ -147,8 +136,8 @@
         .history-details .summary-table tr:last-child td { border-bottom: none; }
 
         /* --- MATCH SCREEN (GLOBAL) --- */
-        #match-screen { display: none; flex-direction: column; height: 100%; position: relative; animation: fadeIn 0.3s ease; }
-        .match-header { background: var(--card-bg); padding: 12px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        #match-screen { display: none; flex-direction: column; height: 100%; min-height: 0; position: relative; animation: fadeIn 0.3s ease; }
+        .match-header { flex-shrink: 0; background: var(--card-bg); padding: 12px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
         .match-header-spacer { width:80px; flex-shrink:1; }
         .match-meta { min-width:0; text-align: center; flex: 1; }
         .match-meta h2 { font-size: 1.4rem; margin: 0; color: var(--accent-blue); }
@@ -156,107 +145,50 @@
         .btn-abort { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 10px 15px; font-size: 1.1rem; font-weight: bold; border-radius: var(--radius-md); cursor: pointer; transition: 0.2s;}
         .btn-abort:hover { background: var(--border-color); color: var(--text-main); }
 
-        /* GENERAL BOARDS & SCROLLING FOR >6 PLAYERS */
-        .boards-container { display: flex; gap: 10px; padding: 10px; overflow-x: auto; align-items: stretch; max-height: 32vh; }
-        .board { background: var(--card-bg); border-radius: var(--radius-lg); border: 2px solid var(--border-color); display: flex; flex-direction: column; transition: var(--transition); position: relative; overflow: hidden; flex: 1; min-width: 0;}
-        .board.scroll-mode { flex: 0 0 calc(16.666% - 10px); min-width: 140px; } /* Activates sliding for 7+ players */
+        /* Score and keypad share the viewport. Cards keep their natural height. */
+        #layout-x01 { min-height: 0; overflow: auto; }
+        .boards-container { display:flex; flex:0 0 auto; gap:8px; padding:10px 12px; overflow-x:auto; }
+        .board { position:relative; display:flex; flex:1 0 0; min-width:140px; flex-direction:column; overflow:hidden;
+            border:1px solid var(--border-color); border-radius:var(--radius-lg); background:var(--card-bg); }
+        .board.scroll-mode { flex-basis:calc((100% - 40px) / 6); }
+        .board.active { border-color:var(--accent-green); }
+        .board.active::before { content:''; position:absolute; inset:0 0 auto; height:3px; background:var(--accent-green); }
+        .board-name { display:flex; justify-content:center; align-items:center; gap:6px; padding:7px 8px;
+            font-size:clamp(0.85rem, 1.7vw, 1.15rem); font-weight:700; border-bottom:1px solid var(--border-color); }
+        .board-name-text { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .board-score { display:grid; place-items:center; flex:1; padding:4px 4px 3px;
+            font-size:clamp(2.1rem, min(7.5vh, 8vw), 4.75rem);
+            font-size:clamp(2.1rem, min(7.5dvh, 8vw), 4.75rem); line-height:1; font-weight:900; font-variant-numeric:tabular-nums; }
+        .board-legs { display:flex; justify-content:center; align-items:center; padding:5px 5px;
+            font-size:0.8rem; color:var(--text-muted); background:var(--bg-base); border-top:1px solid var(--border-color); }
+        .board-progress, .board-progress-group, .progress-dots { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; }
+        .board-progress { column-gap:12px; row-gap:3px; }
+        .board-progress-group { gap:4px; font-size:0.67rem; font-weight:700; }
+        .progress-dots { gap:3px; }
+        .progress-dots svg { width:9px; height:9px; }
+        .board-stats { display:flex; border-top:1px solid var(--border-color); }
+        .stat-box { flex:1; min-width:0; padding:5px 2px; display:flex; flex-direction:column; align-items:center; gap:2px;
+            font-size:0.68rem; font-weight:700; color:var(--text-muted); }
+        .stat-box + .stat-box { border-left:1px solid var(--border-color); }
+        .stat-box span { font-size:clamp(0.88rem, 1.7vw, 1.12rem); line-height:1.15; color:var(--text-main); font-variant-numeric:tabular-nums; }
 
-        .board.active { border-color: var(--accent-green); }
-        .board.active::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--accent-green); }
-        .board-name { font-size: 1.3rem; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 8px; padding: 12px; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-color); }
-        .board-score { flex: 1; display: flex; justify-content: center; align-items: center; font-size: clamp(40px, 10vw, 90px); font-weight: 900; line-height: 1; }
-        .board-stats { display: flex; justify-content: space-around; padding: 12px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border-color); }
-        .stat-box { display: flex; flex-direction: column; align-items: center; font-size: 1rem; color: var(--text-muted); font-weight: bold; transform: translateY(-8px);}
-        .stat-box span { font-size: 1.6rem; color: var(--text-main); }
-        .board-legs { text-align: center; padding: 12px; background: var(--bg-base); font-weight: bold; font-size: 1.4rem; border-top: 1px solid var(--border-color); color: var(--accent-blue);}
+        .pad-container { background:var(--card-bg); padding:15px; border-top:1px solid var(--border-color); display:flex; flex-direction:column; gap:12px; flex:1; justify-content:flex-end; }
+        #layout-x01 .pad-container { padding:8px 12px 12px; gap:8px; justify-content:stretch; }
+        #layout-x01 .input-zone { flex:1; padding:8px; gap:8px; }
+        #layout-x01 .numpad { flex:1; grid-template-rows:repeat(5, minmax(44px, 1fr)); gap:7px; }
+        #layout-x01 .btn-num { padding:1px 0; }
+        #layout-x01 .btn-mod, #layout-x01 .btn-bull, #layout-x01 .btn-miss { font-size:clamp(0.66rem, 1.65vw, 1.12rem); }
 
-        /* PAD CONTAINER */
-        .pad-container { background: var(--card-bg); padding: 15px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 12px; flex: 1; justify-content: flex-end; }
-        /* ── Checkout-Guide: feste Höhe, kein Layout-Shift ──────────────── */
-        .checkout-guide {
-            height: var(--checkout-area-h);   /* Feste Höhe = Layout bleibt stabil */
-            position: relative;               /* Anker für absolut positionierte Kästen */
-            flex-shrink: 0;                   /* Nicht komprimieren lassen */
-        }
-        /* Legacy-Fallback für Modus ohne Kästen (checkout-primary direkt drin) */
-        .checkout-primary { font-size: 1.6rem; font-weight: 900; color: var(--accent-orange); letter-spacing: 2px; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-        .checkout-secondary { font-size: 1.1rem; font-weight: bold; color: var(--text-muted); position: absolute; bottom: 2px; width: 100%; text-align: center; }
+        .checkout-guide { display:flex; flex-direction:column; justify-content:center; gap:3px; min-height:40px; flex-shrink:0; }
+        .checkout-options-row { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0, 1fr); gap:6px; }
+        .checkout-box { display:grid; place-items:center; min-height:40px; padding:4px;
+            border:1px solid var(--checkout-border); border-radius:var(--radius-md); background:var(--checkout-tint); color:var(--accent-orange); }
+        .checkout-box.alt { background:var(--bg-base); border-color:var(--border-color); }
+        .checkout-box-route { font-size:clamp(0.74rem, 1.8vw, 1.38rem); font-weight:800; line-height:1.1; text-align:center; }
+        .checkout-primary, .checkout-secondary { text-align:center; color:var(--accent-orange); font-weight:700; }
+        .checkout-primary { font-size:1rem; }
+        .checkout-secondary { font-size:0.75rem; }
 
-        /* ── Kästen-Zeile: füllt den gesamten Guide-Bereich ─────────────── */
-        .checkout-options-row {
-            position: absolute; inset: 0;     /* Overlay – verschiebt NIX außerhalb */
-            display: flex;
-            gap: var(--checkout-box-gap);
-            justify-content: center;
-            align-items: stretch;
-            z-index: 5;                        /* Ebene 5: über allen Board-Elementen */
-        }
-        /* ── Einzelner Kasten ────────────────────────────────────────────── */
-        .checkout-box {
-            flex: 1 1 0; min-width: 0;
-            background: var(--checkout-tint);
-            border: var(--checkout-border-w) solid var(--checkout-border);
-            border-radius: var(--checkout-box-r);
-            padding: var(--checkout-box-pad);
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            position: relative; z-index: 5;
-            transition: 0.2s;
-        }
-        .checkout-box.alt-1, .checkout-box.alt-2 { background: var(--bg-base); border-color: var(--border-color); }
-        .checkout-box.setup-box { border-style: dashed; flex-direction: row; gap: var(--checkout-setup-gap, 6px); }
-        /* ── Text im Kasten ──────────────────────────────────────────────── */
-        .checkout-box-route {
-            font-size: var(--checkout-route-fs);
-            font-weight: 900; color: var(--accent-orange);
-            letter-spacing: 1px; line-height: 1.15;
-            text-align: center;
-            position: relative; z-index: 6;   /* Text vorne */
-        }
-        .checkout-box.setup-box .checkout-box-route { font-size: var(--checkout-setup-fs, 1.05rem); white-space: nowrap; }
-        /* Arrow icon between setup and finish */
-        .checkout-arrow-icon {
-            display: flex; align-items: center; flex-shrink: 0;
-            color: var(--text-muted);
-            width: var(--checkout-arrow-size, 16px);
-            height: var(--checkout-arrow-size, 16px);
-            position: relative; z-index: 6;
-        }
-        .checkout-arrow-icon svg { width: 100%; height: 100%; }
-        .checkout-box-finish {
-            font-size: var(--checkout-finish-fs);
-            font-weight: 800; color: var(--accent-orange);
-            letter-spacing: 0.5px; white-space: nowrap;
-            text-align: center;
-            position: relative; z-index: 6;
-        }
-        /* Forgiving-Box: Finish-Gruppe (Hit + Miss übereinander) */
-        .checkout-box-finish-group {
-            display: flex; flex-direction: column; align-items: center; gap: 2px;
-            position: relative; z-index: 6;
-        }
-        /* Miss-Pfad: was passiert bei Single statt Triple */
-        .checkout-box-miss {
-            font-size: calc(var(--checkout-finish-fs) * 0.68);
-            color: var(--text-muted); opacity: 0.7;
-            font-weight: 700; letter-spacing: 0.3px;
-            line-height: 1; white-space: nowrap;
-        }
-        /* Forgiving-Boxes mit setup → finish brauchen row-Layout */
-        .checkout-box:has(.checkout-arrow-icon) {
-            flex-direction: row !important;
-            align-items: center !important;
-            gap: var(--checkout-setup-gap, 6px) !important;
-        }
-
-        /* ── Setup-Kasten: alles skaliert mit --checkout-setup-fs ─────── */
-        .checkout-box.setup-box .checkout-box-finish {
-            font-size: var(--checkout-setup-fs);   /* gleiche Basis wie Setup-Text */
-        }
-        .checkout-box.setup-box .checkout-arrow-icon {
-            width:  var(--checkout-setup-fs);      /* Pfeil wächst mit der Schrift */
-            height: var(--checkout-setup-fs);
-        }
         /* ── Input-Zone: Rahmen um Darts-Display + Numpad ───────────────── */
         .input-zone {
             display: flex; flex-direction: column; gap: 10px;
@@ -323,7 +255,24 @@
         .theme-icon-dark { left: 7px; }
         .theme-icon-light { right: 7px; }
 
-        .turn-bar { display:flex; align-items:center; justify-content:space-between; gap:8px; height:44px; flex-shrink:0; }
+        .turn-bar { display:flex; align-items:center; flex-shrink:0; }
+        #layout-atc-bobs .turn-bar { min-height:30px; }
+        .input-zone .current-darts-display { display:grid; grid-template-columns:minmax(0, 1fr) auto minmax(0, 1fr); gap:6px; }
+        .dart-entry-history { display:flex; align-items:center; gap:6px; min-width:0; }
+        .input-zone .dart-slots { gap:6px; }
+        .input-zone .dart-slots:not(.last-entry-slots) { position:static; transform:none; }
+        .input-zone .btn-back, .input-zone .dart-slot { width:clamp(24px, 4.4vw, 44px); height:44px; }
+        .input-zone .btn-back { width:44px; }
+        .input-zone .btn-back svg { width:22px; }
+        .input-zone .dart-slot { font-size:clamp(0.63rem, 1.4vw, 1.08rem); }
+        .input-zone .turn-bar { justify-content:flex-end; text-align:right; padding-right:4px; }
+        @media (max-width:520px) {
+            .input-zone .current-darts-display { grid-template-columns:1fr auto; }
+            .input-zone .turn-bar { grid-column:1 / -1; justify-content:center; padding:0; text-align:center; }
+            .input-zone .turn-bar:has(#turn-feedback:empty) { display:none; }
+            #layout-x01 .boards-container { padding-inline:8px; }
+            #layout-x01 .pad-container { padding-inline:8px; }
+        }
         #turn-feedback { font-size:0.85rem; line-height:1.15; color:var(--text-muted); overflow:hidden; }
         #turn-feedback[data-outcome="bust"], #turn-feedback[data-outcome="eliminated"] { color:var(--accent-red); }
         #turn-feedback[data-outcome="checkout"] { color:var(--accent-green); }
@@ -430,19 +379,35 @@
 
         #summary-overlay { justify-content:flex-start; }
         #summary-overlay > * { flex-shrink:0; }
-        .summary-table-wrapper { margin:20px 0 0; }
+        .summary-table-wrapper { max-width:1040px; margin:20px 0 0; }
+        .player-stat-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 285px), 1fr)); gap:10px; padding:10px; }
+        .player-stat-card { container-type:inline-size; min-width:0; border:1px solid var(--border-color); border-radius:var(--radius-md); overflow:hidden; background:var(--bg-base); }
+        .player-stat-card h3 { display:flex; align-items:center; gap:8px; padding:9px 12px; color:var(--text-main);
+            font-size:1rem; line-height:1.2; overflow-wrap:anywhere; }
+        .player-stat-card .avatar { flex-shrink:0; color:var(--text-muted); }
+        .player-stat-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:1px; padding-top:1px; background:var(--border-color); }
+        .player-stat-grid > div { display:flex; flex-direction:column; gap:3px; padding:8px 5px; text-align:center; background:var(--bg-base); }
+        .player-stat-grid dt { font-size:0.72rem; line-height:1.15; color:var(--text-muted); overflow-wrap:anywhere; }
+        .player-stat-grid dd { font-size:0.97rem; line-height:1.15; font-weight:700; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+        @container (min-width: 395px) {
+            .player-stat-grid:has(> div:nth-child(9)) { grid-template-columns:repeat(5, minmax(0, 1fr)); }
+        }
         .stats-scroll { overflow-x:auto; width:100%; margin-bottom:14px; }
         .stats-scroll td, .stats-scroll th { white-space:nowrap; }
         .archive-note, .turn-journal, .match-heatmaps h3, .resume-match { margin:12px 0; }
         .archive-note { color:var(--text-muted); padding-inline:10px; }
-        .turn-journal summary, .heatmap-summary summary { cursor:pointer; padding:8px; }
-        .match-heatmaps { text-align:center; padding:8px; }
-        .match-heatmaps > div { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
-        .match-heatmaps section { flex:1 1 240px; min-width:0; padding:10px; border:1px solid var(--border-color); border-radius:var(--radius-md); }
-        .heatmap-summary { font-size:0.85rem; color:var(--text-muted); }
-        .heatmap-summary p { margin:6px 0; }
-        .heatmap-scale { display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap; }
-        .heatmap-scale-swatch { display:inline-block; width:42px; height:6px; border-radius:10px; }
+        .turn-journal summary { cursor:pointer; padding:8px; }
+        .match-heatmaps { text-align:center; padding:8px 10px 10px; }
+        .match-heatmaps > div { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap:10px; }
+        .match-heatmaps section { min-width:0; padding:12px; border:1px solid var(--border-color); border-radius:var(--radius-md); }
+        .match-heatmaps h4 { font-size:1rem; overflow-wrap:anywhere; }
+        .heatmap-board { display:block; width:100%; max-width:350px; height:auto; margin:4px auto 0; }
+        .heatmap-number { fill:var(--text-muted); font-size:14px; font-weight:700; }
+        .heatmap-miss { fill:var(--accent-red); stroke:var(--bg-base); stroke-width:4px; stroke-linejoin:round;
+            paint-order:stroke fill; font-size:18px; font-weight:800; }
+        .heatmap-scale { display:flex; justify-content:center; align-items:center; gap:8px; margin-top:6px;
+            color:var(--text-muted); font-size:0.75rem; font-variant-numeric:tabular-nums; }
+        .heatmap-scale-swatch { width:clamp(76px, 13vw, 132px); height:7px; border-radius:999px; background-color:var(--bg-base); }
         .resume-match { text-align:center; }
         .resume-match .btn-play { width:auto; padding:12px 20px; }
         .layout-container { display: none; flex-direction: column; flex: 1; overflow: hidden; }
@@ -458,12 +423,6 @@
         body.layout-mobile #btn-global-settings { top: 15px; right: 15px; width: 35px; height: 35px; font-size: 1.2rem; }
         body.layout-mobile .header h1 { font-size: 1.6rem; margin-bottom: 10px; }
         body.layout-mobile .content-area { padding: 15px; padding-bottom: 90px; }
-        body.layout-mobile .boards-container { flex-wrap: wrap; max-height: none; justify-content: center; overflow-x: visible; }
-        body.layout-mobile .board { flex: 1 1 40%; min-width: 120px; }
-        body.layout-mobile .board-name, body.layout-mobile .board-legs, body.layout-mobile .board-stats { padding:6px; }
-        body.layout-mobile .board-legs > div { gap:5px !important; flex-wrap:wrap; }
-        body.layout-mobile .stat-box { font-size:0.7rem; transform:none; }
-        body.layout-mobile .stat-box span { font-size:1.15rem; }
         body.layout-mobile .match-header { padding:8px; gap:6px; }
         body.layout-mobile .match-header-spacer { width:24px; }
         body.layout-mobile #layout-atc-bobs { flex-direction:column; }
@@ -471,21 +430,11 @@
         body.layout-mobile .atc-main-panel { flex:0 0 auto; padding:10px; }
         body.layout-mobile .atc-player-name { margin-bottom:8px; padding-bottom:6px; }
         body.layout-mobile #controls-atc { grid-template-columns:44px 1fr 1fr !important; }
-        body.layout-mobile .turn-bar { height:34px; }
         body.layout-mobile .input-zone { padding:8px; gap:6px; }
-        body.layout-mobile #layout-x01 .checkout-guide { min-height:0; height:46px; }
-        body.layout-mobile .board-score { font-size: clamp(35px, 12vw, 60px); padding: 10px 0; }
         body.layout-mobile .numpad { gap: 5px; }
         body.layout-mobile .btn-num { padding: 12px 0; font-size: 1.3rem; }
         body.layout-mobile .dart-slot { height: 40px; font-size: 0.88rem; }
         body.layout-mobile .pad-container { padding: 10px; gap: 8px; }
-        body.layout-mobile .checkout-primary { font-size: 1.3rem; }
-        body.layout-mobile .checkout-box-route { font-size: calc(var(--checkout-route-fs) * 0.82); letter-spacing: 0.3px; }
-        body.layout-mobile .checkout-box.setup-box .checkout-box-route { font-size: calc(var(--checkout-setup-fs) * 0.82); }
-        body.layout-mobile .checkout-box-finish { font-size: calc(var(--checkout-finish-fs) * 0.85); }
-        body.layout-mobile .checkout-options-row { gap: calc(var(--checkout-box-gap) * 0.7); }
-        body.layout-mobile .checkout-arrow-icon { width: calc(var(--checkout-arrow-size) * 0.85); height: calc(var(--checkout-arrow-size) * 0.85); }
-        body.layout-mobile .checkout-guide { min-height: 70px; }
         body.layout-mobile .btn-play { padding: 15px; font-size: 1.2rem; }
     </style>
 </head>
@@ -739,19 +688,17 @@
         <div id="layout-x01" class="layout-container">
             <div class="boards-container" id="ui-boards-x01"></div>
             <div class="pad-container">
-                <div class="checkout-guide" id="ui-checkout">
-                    <div class="checkout-primary"></div><div class="checkout-secondary"></div>
-                </div>
+                <div class="checkout-guide" id="ui-checkout"></div>
                 <div class="input-zone">
                 <div class="current-darts-display">
+                    <div class="dart-entry-history">
                     <button class="btn-back" onclick="undoDart()" title="Rückgängig">
                         <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>
                     </button>
-                    <div class="dart-slots last-entry-slots"><div class="dart-slot last-entry-slot" id="last-slot-0">-</div><div class="dart-slot last-entry-slot" id="last-slot-1">-</div><div class="dart-slot last-entry-slot" id="last-slot-2">-</div></div>
-                    <div class="dart-slots"><div class="dart-slot" id="slot-0">-</div><div class="dart-slot" id="slot-1">-</div><div class="dart-slot" id="slot-2">-</div></div>
-                </div>
-                <div class="turn-bar" id="turn-bar">
-                    <span id="turn-feedback" role="status"></span>
+                    <div class="dart-slots last-entry-slots" aria-label="Letzte Aufnahme"><div class="dart-slot last-entry-slot" id="last-slot-0">-</div><div class="dart-slot last-entry-slot" id="last-slot-1">-</div><div class="dart-slot last-entry-slot" id="last-slot-2">-</div></div>
+                    </div>
+                    <div class="dart-slots" aria-label="Aktuelle Aufnahme"><div class="dart-slot" id="slot-0">-</div><div class="dart-slot" id="slot-1">-</div><div class="dart-slot" id="slot-2">-</div></div>
+                    <div class="turn-bar" id="turn-bar"><span id="turn-feedback" role="status"></span></div>
                 </div>
                 <div class="numpad" id="numpad-container">
                     <button class="btn-num btn-mod" id="mod-double" onclick="toggleMod(2)">DOUBLE</button>
@@ -1554,73 +1501,108 @@
             details.style.display = opening ? 'block' : 'none';
         }
 
-        function generateHeatmapHTML(heatmap, legacy) {
-            if(!heatmap || Object.keys(heatmap).length === 0) return '<div style="color:var(--text-muted);font-size:0.9rem;text-align:center;padding:20px;">Noch keine Treffer</div>';
-
-            const counts = Object.entries(heatmap);
-            const hitSegments = counts.filter(([key]) => /^(?:[DT]?(?:[1-9]|1[0-9]|20)|25|50)$/.test(key));
-            const hits = hitSegments.reduce((sum, [, count]) => sum + count, 0);
-            const max = Math.max(0, ...hitSegments.map(([, count]) => count));
-            const order = [20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
-            const cx = 200, cy = 200;
-
+        function generateHeatmapHTML(heatmap) {
+            const hitSegments = Object.keys(heatmap).filter(key => /^(?:[DT]?(?:[1-9]|1[0-9]|20)|25|50)$/.test(key));
+            const max = Math.max(0, ...hitSegments.map(key => heatmap[key]));
+            const order = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5];
+            const center = 200;
             const rBull = 14, rOuterBull = 32, rInnerSingle = 105, rTriple = 125, rOuterSingle = 180, rDouble = 200;
 
-            function polar(r, a) { const rad = (a-90)*Math.PI/180; return {x: cx + r*Math.cos(rad), y: cy + r*Math.sin(rad)}; }
+            function polar(radius, angle) {
+                const rad = (angle - 90) * Math.PI / 180;
+                return { x: center + radius * Math.cos(rad), y: center + radius * Math.sin(rad) };
+            }
             function arcPath(r1, r2, a1, a2) {
                 const p1 = polar(r2, a1), p2 = polar(r2, a2), p3 = polar(r1, a2), p4 = polar(r1, a1);
                 return `M ${p1.x} ${p1.y} A ${r2} ${r2} 0 0 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${r1} ${r1} 0 0 0 ${p4.x} ${p4.y} Z`;
             }
-            function getColor(count) {
-                if (!count) return 'var(--card-bg)';
-                const fraction = max === 1 ? 1 : (count - 1) / (max - 1);
-                const blue = [37, 99, 235];
-                const cyan = [103, 232, 249];
-                const channels = blue.map((channel, i) => Math.round(channel + fraction * (cyan[i] - channel)));
-                return `rgb(${channels.join(', ')})`;
+            function hitColor(count) {
+                if (!count) return 'var(--bg-base)';
+                const fraction = max <= 1 ? 0 : (count - 1) / (max - 1);
+                const start = [79, 118, 255], end = [67, 238, 247];
+                const channels = start.map((value, i) => Math.round(value + fraction * (end[i] - value)));
+                const opacity = (0.24 + 0.76 * fraction).toFixed(2);
+                return `rgba(${channels.join(', ')}, ${opacity})`;
             }
-            const scale = max > 1 ? `linear-gradient(90deg, ${getColor(1)}, ${getColor(max)})` : getColor(max);
+            function segment(path, count, label) {
+                return `<path d="${path}" fill="${hitColor(count)}" stroke="var(--border-color)" stroke-width="1"><title>${label}: ${count}×</title></path>`;
+            }
+            function label(position, text, className, details = '') {
+                return `<text x="${position.x}" y="${position.y}" class="${className}" text-anchor="middle" dominant-baseline="central">${details ? `<title>${details}</title>` : ''}${text}</text>`;
+            }
 
-            let svg = `<svg role="img" aria-label="Dartscheibe mit Trefferhäufigkeit" viewBox="-38 -38 476 476" style="width:100%; max-width:340px; height:auto; display:block; margin:0 auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));">`;
-            svg += `<circle cx="${cx}" cy="${cy}" r="${rDouble+2}" fill="var(--bg-base)" stroke="var(--border-color)" stroke-width="2"/>`;
+            let svg = `<svg class="heatmap-board" role="img" aria-label="Dartscheibe mit Treffern und Doppel-Fehlversuchen" viewBox="-30 -30 460 460">
+                <circle cx="${center}" cy="${center}" r="${rDouble + 2}" fill="var(--bg-base)" stroke="var(--border-color)" stroke-width="2"/>`;
 
-            order.forEach((num, i) => {
-                const a1 = (i * 18) - 9; const a2 = (i * 18) + 9;
-                let sVal = heatmap[num.toString()] || 0; let dVal = heatmap['D'+num] || 0; let tVal = heatmap['T'+num] || 0;
-                let sColor = getColor(sVal); let dColor = getColor(dVal); let tColor = getColor(tVal);
+            for (const [i, num] of order.entries()) {
+                const angle = i * 18;
+                const a1 = angle - 9, a2 = angle + 9;
+                const single = heatmap[num] || 0;
+                svg += segment(arcPath(rOuterBull, rInnerSingle, a1, a2), single, `Single ${num}`);
+                svg += segment(arcPath(rInnerSingle, rTriple, a1, a2), heatmap['T' + num] || 0, `Triple ${num}`);
+                svg += segment(arcPath(rTriple, rOuterSingle, a1, a2), single, `Single ${num}`);
+                svg += segment(arcPath(rOuterSingle, rDouble, a1, a2), heatmap['D' + num] || 0, `Double ${num}`);
+                svg += label(polar(rDouble + 15, angle), num, 'heatmap-number');
+            }
 
-                svg += `<path d="${arcPath(rOuterBull, rInnerSingle, a1, a2)}" fill="${sColor}" stroke="var(--border-color)" stroke-width="1"><title>Single ${num} gesamt: ${sVal}×</title></path>`;
-                svg += `<path d="${arcPath(rInnerSingle, rTriple, a1, a2)}" fill="${tColor}" stroke="var(--border-color)" stroke-width="1"><title>Triple ${num}: ${tVal}x</title></path>`;
-                svg += `<path d="${arcPath(rTriple, rOuterSingle, a1, a2)}" fill="${sColor}" stroke="var(--border-color)" stroke-width="1"><title>Single ${num} gesamt: ${sVal}×</title></path>`;
-                svg += `<path d="${arcPath(rOuterSingle, rDouble, a1, a2)}" fill="${dColor}" stroke="var(--border-color)" stroke-width="1"><title>Double ${num}: ${dVal}x</title></path>`;
+            const bullRing = arcPath(rBull, rOuterBull, 0, 180) + ' ' + arcPath(rBull, rOuterBull, 180, 360);
+            const bull = heatmap[25] || 0, bullseye = heatmap[50] || 0;
+            svg += `<path d="${bullRing}" fill="${hitColor(bull)}"><title>Bull: ${bull}×</title></path>`;
+            svg += `<circle cx="${center}" cy="${center}" r="${rOuterBull}" fill="none" stroke="var(--border-color)"/>`;
+            svg += `<circle cx="${center}" cy="${center}" r="${rBull}" fill="${hitColor(bullseye)}" stroke="var(--border-color)"><title>Bullseye: ${bullseye}×</title></circle>`;
 
-                const lblP = polar(rDouble + 16, i*18);
-                svg += `<text x="${lblP.x}" y="${lblP.y}" fill="var(--text-muted)" font-size="15" font-weight="bold" text-anchor="middle" dominant-baseline="central">${num}</text>`;
+            const missLabels = [];
+            for (const [i, num] of [...order, 25].entries()) {
+                const target = num === 25 ? 'Bullseye' : 'D' + num;
+                const inside = heatmap['IM' + num] || 0;
+                const other = heatmap['MD' + num] || 0;
+                if (inside) {
+                    const position = num === 25 ? polar(23, 0) : polar(158, i * 18);
+                    missLabels.push(label(position, inside, 'heatmap-miss', `${target}: ${inside} Inside-Miss`));
+                }
+                if (other) {
+                    const position = num === 25 ? {x:center, y:center} : polar(191, i * 18);
+                    missLabels.push(label(position, other, 'heatmap-miss', `${target}: ${other} weitere Fehlversuche`));
+                }
+            }
+            svg += missLabels.join('') + '</svg>';
 
-            });
-
-            let bVal = heatmap['25'] || 0; let dbVal = heatmap['50'] || 0;
-            svg += `<circle cx="${cx}" cy="${cy}" r="${rOuterBull}" fill="${getColor(bVal)}" stroke="var(--border-color)" stroke-width="1"><title>Bull: ${bVal}x</title></circle>`;
-            svg += `<circle cx="${cx}" cy="${cy}" r="${rBull}" fill="${getColor(dbVal)}" stroke="var(--border-color)" stroke-width="1"><title>Bullseye: ${dbVal}x</title></circle>`;
-            svg += `</svg>`;
-
-            const attempts = counts.filter(([key]) => /^(MD|IM)\d+$/.test(key))
-                .sort(([a], [b]) => Number(a.slice(2)) - Number(b.slice(2)));
-            const misses = heatmap['0'] || 0;
-            const unknown = heatmap.unknown || 0;
-            const location = unknown ? ` · ${unknown} am Ziel vorbei (Position unbekannt)` : '';
-            const boardList = hitSegments.map(([key, count]) =>
-                `<span>${dartDisplay({display: key})} <b>${count}×</b></span>`).join(' · ');
-            const checkoutList = attempts.map(([key, count]) =>
-                `<span>${key.slice(2) === '25' ? 'DBull' : 'D' + key.slice(2)} ${key.startsWith('IM') ? '→ Single' : 'verfehlt'} <b>${count}×</b></span>`).join(' · ');
-            return `<div class="heatmap-summary">${svg}
-                <p>${hits} erfasste Treffer · ${misses} neben der Scheibe${location}</p>
-                ${max ? `<p class="heatmap-scale"><span class="heatmap-scale-swatch" style="background:${scale}" aria-hidden="true"></span>
-                    <span>Farbskala pro Spieler · ${max === 1 ? '1 Treffer' : `1 bis ${max} Treffer`} je Feld</span></p>
-                    <p>Single-Treffer färben beide Ringe und zählen einmal.</p>
-                    <details><summary>Treffer je Feld</summary><p>${boardList}</p></details>` : ''}
-                ${checkoutList ? `<details><summary>${legacy ? 'Doppel-Fehlversuche (Altdaten, teils geschätzt)' : 'Erfasste Doppel-Fehlversuche'}</summary><p>${checkoutList}</p></details>` : ''}
+            const min = max ? 1 : 0;
+            const scale = `linear-gradient(90deg, ${hitColor(min)}, ${hitColor(max)})`;
+            return `${svg}<div class="heatmap-scale" role="img" aria-label="Farbskala: ${min} bis ${max} Treffer pro Feld">
+                <span>${min}</span><span class="heatmap-scale-swatch" style="background-image:${scale}" aria-hidden="true"></span><span>${max}</span>
             </div>`;
+        }
+
+        function playersWithRecoveredInsideMisses(m) {
+            const { mode, outMode, inMode, startScore, targetScore } = m.config;
+            if (m.dataVersion !== 2 || outMode !== 'double' || (mode !== 'x01' && mode !== 'elimination')) return m.players;
+            const recovered = new Map();
+            const pending = partialTurn(m);
+            const turns = pending ? [...(m.turnLog || []), pending] : m.turnLog || [];
+            for (const turn of turns) {
+                let remaining = mode === 'x01' ? turn.before : targetScore - turn.before;
+                for (const dart of turn.darts) {
+                    const unopened = mode === 'x01' && inMode === 'double' && remaining === startScore;
+                    const target = unopened ? null : doubleForScore(remaining);
+                    if (target && !dart.checkoutTarget && dart.base === target && dart.mult === 1) {
+                        const counts = recovered.get(turn.playerId) || {};
+                        counts[target] = (counts[target] || 0) + 1;
+                        recovered.set(turn.playerId, counts);
+                    }
+                    remaining -= dart.score;
+                }
+            }
+            return m.players.map(player => {
+                const counts = recovered.get(player.id);
+                if (!counts) return player;
+                const stats = { ...player, heatmap: { ...player.heatmap } };
+                for (const [target, count] of Object.entries(counts)) {
+                    addHeat(stats, 'IM' + target, count);
+                    stats.checkoutAttempts = (stats.checkoutAttempts || 0) + count;
+                }
+                return stats;
+            });
         }
 
         function generateLegDetails(m) {
@@ -1642,7 +1624,7 @@
             return `<div class="stats-scroll"><table class="summary-table"><thead><tr><th>Set–Leg</th>${headers}</tr></thead><tbody>${rows}</tbody></table></div>`;
         }
 
-        function generatePlayerStats(m) {
+        function generatePlayerStats(m, players) {
             const mode = m.config.mode;
             const doubleOut = m.config.outMode === 'double';
             const headers = {
@@ -1652,7 +1634,8 @@
                 atc: ['Treffer', 'Darts je Treffer', 'Nächstes Ziel'],
                 bobs27: ['Score', 'Treffer', 'Stand']
             }[mode] || [];
-            const rows = m.players.map((p, index) => {
+            const labels = ['Darts', ...headers, ...(doubleOut ? ['Doppelquote'] : [])];
+            const cards = players.map((p, index) => {
                 const scoringMode = mode === 'x01' || mode === 'elimination';
                 const pending = scoringMode && m.activePlayerIdx === index ? partialTurn(m) : null;
                 const partialPoints = pending?.points || 0;
@@ -1668,10 +1651,13 @@
                 }[mode]?.() || [];
                 cells.unshift(mode === 'bobs27' && !m.dataVersion ? '–' : p.totalDarts ?? '–');
                 if (doubleOut) cells.push(p.checkoutAttempts ? `${p.checkoutHits || 0}/${p.checkoutAttempts} · ${Math.round((p.checkoutHits || 0) * 100 / p.checkoutAttempts)} %` : '–');
-                return `<tr><th>${playerAvatar(p)} ${escapeHTML(p.name)}</th>${cells.map(cell => `<td>${escapeHTML(cell)}</td>`).join('')}</tr>`;
+                const metrics = cells.map((cell, i) => `<div><dt>${labels[i]}</dt><dd>${escapeHTML(cell)}</dd></div>`).join('');
+                return `<section class="player-stat-card">
+                    <h3><span class="avatar" aria-hidden="true">${playerAvatar(p)}</span>${escapeHTML(p.name)}</h3>
+                    <dl class="player-stat-grid">${metrics}</dl>
+                </section>`;
             }).join('');
-            const headings = ['Spieler', 'Darts', ...headers, ...(doubleOut ? ['Doppelquote'] : [])];
-            return `<div class="stats-scroll"><table class="stats-table"><thead><tr>${headings.map(label => `<th>${label}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
+            return `<div class="player-stat-cards">${cards}</div>`;
         }
 
         function partialTurn(m) {
@@ -1717,8 +1703,9 @@
             const winners = m.players.filter(p => winnerIds?.includes(p.id)).map(p => escapeHTML(p.name));
             const result = winners.length ? `<p class="archive-note">${winners.length === 1 ? 'Sieger: ' : 'Gleichstand: '}${winners.join(', ')}</p>`
                 : winnerIds?.length === 0 ? '<p class="archive-note">Alle ausgeschieden</p>' : '';
-            const maps = m.players.filter(p => p.heatmap && Object.keys(p.heatmap).length)
-                .map(p => `<section><h4>${escapeHTML(p.name)}</h4>${generateHeatmapHTML(p.heatmap, !m.dataVersion)}</section>`).join('');
+            const statsPlayers = playersWithRecoveredInsideMisses(m);
+            const maps = statsPlayers.filter(p => p.heatmap && Object.keys(p.heatmap).length)
+                .map(p => `<section><h4>${escapeHTML(p.name)}</h4>${generateHeatmapHTML(p.heatmap)}</section>`).join('');
             const resume = index != null && m.status === 'paused'
                 ? `<div class="resume-match"><button class="btn-play" onclick="resumeMatch(${index}, event)">🎯 Spiel fortsetzen</button></div>` : '';
             const out = { straight: 'Straight Out', double: 'Double Out', master: 'Master Out' }[m.config.outMode];
@@ -1730,7 +1717,7 @@
                 atc: [{ single: 'Single', double: 'Double', triple: 'Triple' }[m.config.atcType]]
             }[m.config.mode] || [];
             return `${result}${format.length ? `<p class="archive-note">${format.filter(Boolean).map(escapeHTML).join(' · ')}</p>` : ''}
-                ${generatePlayerStats(m)}${generateLegDetails(m)}${generateTurnJournal(m)}
+                ${generatePlayerStats(m, statsPlayers)}${generateLegDetails(m)}${generateTurnJournal(m)}
                 ${maps ? `<div class="match-heatmaps"><h3>Treffer-Heatmap</h3><div>${maps}</div></div>` : ''}
                 ${resume}`;
         }
@@ -1824,7 +1811,7 @@
                 id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
                 config: { ...config, timestamp: Date.now() }, players, currentSet: 1, currentLeg: 1,
                 activePlayerIdx: 0, starterIdx: 0, turnDarts: [], legHistory: [], status: 'active',
-                lastDarts: [], turnLog: [], turnOutcome: null, dataVersion: 2
+                lastDarts: [], turnLog: [], turnOutcome: null, dataVersion: 3
             };
             match.scoreAtTurnStart = mode === 'x01' ? config.startScore : 0;
             historyStack = [];
@@ -2144,9 +2131,15 @@
         }
 
         function checkoutTarget() {
-            if (match?.config.outMode !== 'double') return null;
+            if (!match || match.config.outMode !== 'double') return null;
+            const { mode, targetScore, inMode, startScore } = match.config;
+            if (mode !== 'x01' && mode !== 'elimination') return null;
             const p = match.players[match.activePlayerIdx];
-            const score = match.config.mode === 'elimination' ? match.config.targetScore - p.score : p.score;
+            if (mode === 'x01' && inMode === 'double' && p.score === startScore) return null;
+            return doubleForScore(mode === 'elimination' ? targetScore - p.score : p.score);
+        }
+
+        function doubleForScore(score) {
             if (score === 50) return 25;
             return score >= 2 && score <= 40 && score % 2 === 0 ? score / 2 : null;
         }
@@ -2235,11 +2228,12 @@
             const bust = remaining < 0 || (remaining === 1 && outMode !== 'straight') || (remaining === 0 && invalidOut);
             const win = remaining === 0 && !bust;
 
-            if (target && (win || checkoutIntent)) {
+            const insideMiss = target && base === target && mult === 1;
+            if (target && (win || insideMiss || checkoutIntent)) {
                 dart.checkoutTarget = target;
                 p.checkoutAttempts = (p.checkoutAttempts || 0) + 1;
                 if (win) p.checkoutHits = (p.checkoutHits || 0) + 1;
-                else addHeat(p, (base === target && mult === 1 ? 'IM' : 'MD') + target);
+                else addHeat(p, (insideMiss ? 'IM' : 'MD') + target);
             }
 
             const turnSum = match.turnDarts.reduce((points, entry) => points + entry.score, 0);
@@ -2440,10 +2434,12 @@
             scoringLayout.appendChild(pad);
             document.getElementById('ui-checkout').style.display = layout === 'cricket' ? 'none' : '';
             const turnBar = document.getElementById('turn-bar');
-            const nextControl = ['atc', 'bobs27'].includes(layout)
-                ? document.getElementById(layout === 'atc' ? 'controls-atc' : 'controls-bobs')
-                : document.getElementById('numpad-container');
-            nextControl.parentNode.insertBefore(turnBar, nextControl);
+            if (layout === 'atc' || layout === 'bobs27') {
+                const nextControl = document.getElementById(layout === 'atc' ? 'controls-atc' : 'controls-bobs');
+                nextControl.before(turnBar);
+            } else {
+                pad.querySelector('.current-darts-display').append(turnBar);
+            }
 
             if (match.config.mode === 'x01' || match.config.mode === 'elimination') {
                 document.getElementById('layout-x01').style.display = 'flex';
@@ -2566,15 +2562,17 @@
             feedback.setAttribute('data-outcome', match.turnOutcome || '');
             const player = match.players[match.activePlayerIdx];
 
-            const entries = match.turnDarts.map(dartDisplay).join(' · ');
+            feedback.textContent = {
+                bust: 'Überworfen · 0 Punkte',
+                eliminated: 'Ausgeschieden',
+                checkout: 'Leg gewonnen',
+                'complete-win': 'Sieg'
+            }[match.turnOutcome] || '';
             const previous = match.players.find(p => p.id === match.lastPlayerId);
-            if (match.turnOutcome === 'bust') feedback.textContent = `Überworfen · ${entries} · 0 Punkte`;
-            else if (match.turnOutcome === 'eliminated') feedback.textContent = `${player.name} ausgeschieden · ${entries}`;
-            else if (match.turnOutcome === 'checkout') feedback.textContent = `Leg gewonnen · ${entries}`;
-            else if (match.turnOutcome) feedback.textContent = `Aufnahme fertig · ${entries}`;
-            else if (entries) feedback.textContent = `${player.name} · ${entries}`;
-            else if (previous) feedback.textContent = `${player.name} dran · Zuletzt: ${previous.name}, ${match.lastDarts.join(' · ')}${match.lastOutcome === 'bust' ? ' (Bust)' : ''}`;
-            else feedback.textContent = `${player.name} dran`;
+            const lastSlots = document.querySelector('.last-entry-slots');
+            lastSlots.setAttribute('aria-label', previous
+                ? `Letzte Aufnahme von ${previous.name}${match.lastOutcome === 'bust' ? ' (überworfen)' : ''}`
+                : 'Letzte Aufnahme');
 
             for (let i = 0; i < 3; i++) {
                 const slot = document.getElementById(`slot-${i}`);
@@ -2589,11 +2587,12 @@
 
         function progressDots(won, total, color) {
             if (total > 8) return `${won}/${total}`;
-            return Array.from({ length: total }, (_, i) => {
+            const dots = Array.from({ length: total }, (_, i) => {
                 const fill = i < won ? `var(--accent-${color})` : 'transparent';
                 const stroke = i < won ? fill : 'var(--text-muted)';
-                return `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="margin:0 3px;vertical-align:middle"><circle cx="12" cy="12" r="10" fill="${fill}" stroke="${stroke}" stroke-width="2"/></svg>`;
+                return `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="${fill}" stroke="${stroke}" stroke-width="2"/></svg>`;
             }).join('');
+            return `<span class="progress-dots" role="img" aria-label="${won} von ${total}">${dots}</span>`;
         }
 
         function updateMatchUI() {
@@ -2618,13 +2617,13 @@
                     let activeCls = i === match.activePlayerIdx ? 'active' : '';
                     let scrollCls = match.players.length > 6 ? 'scroll-mode' : '';
 
-                    let formatHtml = `Target: <span>${match.config.targetScore}</span>`;
+                    let formatHtml = `Target: <span>${match.config.targetScore}</span>`;
                     if (match.config.mode === 'x01') {
                         const sDots = progressDots(p.sets, match.config.setsToWin, 'blue');
                         const lDots = progressDots(p.legs, match.config.legsPerSet, 'green');
-                        formatHtml = `<div style="display:flex; justify-content:center; align-items:center; gap:15px; font-size:1.1rem; height:100%;">
-                            <div style="display:flex; align-items:center;"><span style="color:var(--text-muted); font-size:0.9rem; margin-right:6px;">SETS</span> ${sDots}</div>
-                            <div style="display:flex; align-items:center;"><span style="color:var(--text-muted); font-size:0.9rem; margin-right:6px;">LEGS</span> ${lDots}</div>
+                        formatHtml = `<div class="board-progress">
+                            <span class="board-progress-group">SETS ${sDots}</span>
+                            <span class="board-progress-group">LEGS ${lDots}</span>
                         </div>`;
                     }
 
@@ -2636,7 +2635,7 @@
 
                     container.innerHTML += `
                         <div class="board ${activeCls} ${scrollCls}" id="board-${i}">
-                            <div class="board-name"><span class="avatar" style="font-size:1rem;">${playerAvatar(p)}</span> ${escapeHTML(p.name)}</div>
+                            <div class="board-name"><span class="avatar" style="font-size:1rem;">${playerAvatar(p)}</span><span class="board-name-text">${escapeHTML(p.name)}</span></div>
                             <div class="board-score" id="score-el-${i}" data-score="${p.score}">${p.score}</div>
                             <div class="board-legs">${formatHtml}</div>
                             <div class="board-stats"><div class="stat-box">AVG <span>${avg}</span></div><div class="stat-box">DARTS <span>${p.legDarts}</span></div>${doublesHtml}</div>
@@ -2648,7 +2647,6 @@
                 let checkScore = match.config.mode === 'x01' ? activeScore : (match.config.targetScore - activeScore);
 
                 const checkoutDiv = document.getElementById('ui-checkout');
-                const classMods = ['', 'alt-1', 'alt-2'];
                 const unopened = match.config.inMode === 'double' && activeScore === match.config.startScore;
                 const routes = checkoutRoutes(checkScore, dartsLeft, match.config.outMode, unopened);
 
@@ -2666,18 +2664,18 @@
                 if (routes.length > 0) {
                     let inner = `<div class="checkout-options-row">`;
                     routes.forEach((r, i) => {
-                        inner += `<div class="checkout-box ${classMods[i]}"><div class="checkout-box-route">${r}</div></div>`;
+                        inner += `<div class="checkout-box ${i ? 'alt' : ''}"><div class="checkout-box-route">${r.replaceAll(' - ', ' · ')}</div></div>`;
                     });
                     inner += `</div>`;
                     if (killHints.length > 0) {
-                        inner += `<div class="checkout-secondary" style="font-size:0.72rem; color:var(--accent-orange); bottom:0;">${killHints.join(' | ')}</div>`;
+                        inner += `<div class="checkout-secondary">${killHints.join(' | ')}</div>`;
                     }
                     checkoutDiv.innerHTML = inner;
                 } else if (killHints.length > 0) {
                     checkoutDiv.innerHTML = `<div class="checkout-primary">${killHints[0]}</div>`
-                        + (killHints.length > 1 ? `<div class="checkout-secondary" style="font-size:0.8rem;color:var(--accent-orange);bottom:4px;">${killHints.slice(1).join(' | ')}</div>` : '');
+                        + (killHints.length > 1 ? `<div class="checkout-secondary">${killHints.slice(1).join(' | ')}</div>` : '');
                 } else {
-                    checkoutDiv.innerHTML = `<div class="checkout-primary" style="opacity:0;">-</div>`;
+                    checkoutDiv.replaceChildren();
                 }
             }
             else if (match.config.mode === 'cricket') {
