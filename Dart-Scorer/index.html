@@ -138,18 +138,37 @@
 
         /* --- MATCH SCREEN (GLOBAL) --- */
         #match-screen { display: none; flex-direction: column; height: 100%; min-height: 0; position: relative; animation: fadeIn 0.3s ease; }
-        .match-header { flex-shrink: 0; background: var(--card-bg); padding: 12px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        .match-header-spacer { width:80px; flex-shrink:1; }
-        .match-meta { min-width:0; text-align: center; flex: 1; }
+        .match-header { flex-shrink:0; background:var(--card-bg); padding:12px 20px; border-bottom:1px solid var(--border-color);
+            display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr); gap:8px; align-items:center; }
+        .match-header > .btn-abort { justify-self:start; min-height:44px; }
+        .match-meta { min-width:0; text-align:center; overflow-wrap:anywhere; }
         .match-meta h2 { font-size: 1.4rem; margin: 0; color: var(--accent-blue); }
         .match-meta p { font-size: 1rem; color: var(--text-muted); margin: 0; font-weight: bold; text-transform: uppercase;}
         .btn-abort { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 10px 15px; font-size: 1.1rem; font-weight: bold; border-radius: var(--radius-md); cursor: pointer; transition: 0.2s;}
         .btn-abort:hover { background: var(--border-color); color: var(--text-main); }
 
+        .match-display-controls { display:flex; min-width:0; justify-content:flex-end; align-items:center; gap:6px; }
+        .match-scale-toggle { display:grid; place-items:center; flex:0 0 44px; height:44px; border:1px solid var(--border-color);
+            border-radius:var(--radius-md); background:var(--card-bg); color:var(--text-muted); cursor:pointer; }
+        .match-scale-toggle[aria-expanded="true"] { color:var(--accent-blue); border-color:var(--accent-blue); background:var(--blue-tint); }
+        .match-scale-toggle:focus-visible, .match-scale-input:focus-visible { outline:2px solid var(--accent-blue); outline-offset:2px; }
+        .match-scale-panel { display:flex; align-items:center; gap:8px; min-width:0; }
+        .match-scale-panel[hidden] { display:none; }
+        .match-scale-input { width:clamp(70px, 12vw, 144px); min-width:0; height:44px; accent-color:var(--accent-blue); cursor:ew-resize; touch-action:pan-y; }
+        .match-scale-value { min-width:5ch; color:var(--text-muted); text-align:right; font-size:0.82rem; font-variant-numeric:tabular-nums; }
+        @media (max-width:600px) {
+            .match-header { grid-template-columns:auto minmax(0, 1fr) auto; gap:6px; }
+            .match-meta h2 { font-size:1.05rem; }
+            .match-meta p { font-size:0.74rem; }
+            .match-header > .btn-abort { padding:6px 8px; font-size:0.9rem; }
+            .match-scale-input { width:clamp(72px, 21vw, 108px); }
+            .match-scale-value { display:none; }
+        }
+
         /* Score and keypad share the viewport. Cards keep their natural height. */
         #layout-x01 { min-height: 0; overflow: auto; }
         .boards-container { display:flex; flex:0 0 auto; gap:8px; padding:10px 12px; overflow-x:auto; }
-        .board { position:relative; display:flex; flex:1 0 0; min-width:140px; flex-direction:column; overflow:hidden;
+        .board { container-type:inline-size; position:relative; display:flex; flex:1 0 0; min-width:140px; flex-direction:column; overflow:hidden;
             border:1px solid var(--border-color); border-radius:var(--radius-lg); background:var(--card-bg); }
         .board.scroll-mode { flex-basis:calc((100% - 40px) / 6); }
         .board.active { border-color:var(--accent-green); }
@@ -158,8 +177,9 @@
             font-size:clamp(0.85rem, 1.7vw, 1.15rem); font-weight:700; border-bottom:1px solid var(--border-color); }
         .board-name-text { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .board-score { display:grid; place-items:center; flex:1; padding:4px 4px 3px;
-            font-size:clamp(2.1rem, min(6vh, 7.5vw), 4rem);
-            font-size:clamp(2.1rem, min(6dvh, 7.5vw), 4rem); line-height:1; font-weight:900; font-variant-numeric:tabular-nums; }
+            font-size:calc(clamp(2.1rem, min(6vh, 7.5vw), 4rem) * var(--match-ui-scale, 1));
+            font-size:min(calc(clamp(2.1rem, min(6dvh, 7.5vw), 4rem) * var(--match-ui-scale, 1)),
+                calc((160cqi - 8px) / var(--score-characters))); line-height:1; font-weight:900; font-variant-numeric:tabular-nums; }
         .board-legs { display:flex; justify-content:center; align-items:center; padding:5px 5px;
             font-size:0.8rem; color:var(--text-muted); background:var(--bg-base); border-top:1px solid var(--border-color); }
         .board-progress, .board-progress-group, .progress-dots { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; }
@@ -180,15 +200,18 @@
         #layout-x01 .btn-num { padding:1px 0; }
         #layout-x01 .btn-mod, #layout-x01 .btn-bull, #layout-x01 .btn-miss { font-size:clamp(0.66rem, 1.65vw, 1.12rem); }
 
-        .checkout-guide { display:flex; flex-direction:column; justify-content:center; gap:3px; min-height:40px; flex-shrink:0; }
+        .checkout-guide { --checkout-font:calc(clamp(0.74rem, 2vw, 1.5rem) * var(--match-ui-scale, 1));
+            --checkout-height:max(40px, calc(var(--checkout-font) * 1.1 + 10px));
+            display:flex; flex-direction:column; justify-content:center; gap:3px; min-height:var(--checkout-height); flex-shrink:0; }
         .checkout-options-row { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0, 1fr); gap:6px; }
-        .checkout-box { display:grid; place-items:center; min-height:40px; padding:4px;
+        .checkout-box { container-type:inline-size; display:grid; place-items:center; min-height:var(--checkout-height); padding:4px;
             border:1px solid var(--checkout-border); border-radius:var(--radius-md); background:var(--checkout-tint); color:var(--accent-orange); }
         .checkout-box.alt { background:var(--bg-base); border-color:var(--border-color); }
-        .checkout-box-route { font-size:clamp(0.74rem, 2vw, 1.5rem); font-weight:800; line-height:1.1; text-align:center; }
+        .checkout-box-route { font-size:var(--checkout-font); font-size:min(var(--checkout-font), calc(180cqi / var(--route-characters)));
+            font-weight:800; line-height:1.1; text-align:center; }
         .checkout-primary, .checkout-secondary { text-align:center; color:var(--accent-orange); font-weight:700; }
-        .checkout-primary { font-size:1rem; }
-        .checkout-secondary { font-size:0.75rem; }
+        .checkout-primary { font-size:calc(1rem * var(--match-ui-scale, 1)); }
+        .checkout-secondary { font-size:calc(0.75rem * var(--match-ui-scale, 1)); }
 
         /* ── Input-Zone: Rahmen um Darts-Display + Numpad ───────────────── */
         .input-zone {
@@ -293,6 +316,7 @@
         /* NUMPAD */
         .numpad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
         .btn-num { background: var(--card-hover); color: var(--text-main); border: none; border-radius: var(--radius-md); padding: 22px 0; font-size: 1.6rem; font-weight: bold; cursor: pointer; transition: background-color 0.05s; position: relative; }
+        .btn-num.score-number { font-size:calc(1.6rem * var(--match-ui-scale, 1)); }
         @media (hover: hover) { .btn-num:hover { background: var(--keypad-hover); } }
         .btn-num:active { background: var(--keypad-pressed); }
         .btn-mod { border: 2px solid var(--border-color); color: var(--text-muted); font-size: 1.3rem; }
@@ -311,7 +335,7 @@
         .cricket-cell.header { background: var(--card-bg); color: var(--text-muted); font-size: 1rem; text-transform: uppercase; padding: 10px 5px;}
         .cricket-cell.target-header { color: var(--text-main); font-size: 1.5rem; }
         .cricket-cell.player-name { justify-content: flex-start; padding-left: 15px; background: var(--card-bg); font-size: 1.4rem;}
-        .cricket-cell.score { font-size: 1.8rem; color: var(--accent-blue); background: var(--card-bg); }
+        .cricket-cell.score { font-size:calc(1.8rem * var(--match-ui-scale, 1)); color: var(--accent-blue); background: var(--card-bg); }
         .cricket-cell.active-row { background: var(--green-tint); color: var(--text-main); }
         .mark-1::after { content: '/'; color: var(--text-main); font-size: 1.8rem;}
         .mark-2::after { content: 'X'; color: var(--text-main); font-size: 1.8rem;}
@@ -323,8 +347,8 @@
         .atc-player-name { font-size: 2.2rem; font-weight: bold; text-align: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 15px;}
         .atc-target-area { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;}
         .atc-target-label { font-size: 1.5rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase; letter-spacing: 3px; }
-        .atc-target-value { font-size: clamp(3rem, 10vw, 7rem); font-weight: 900; color: var(--accent-blue); margin: 10px 0; line-height: 1; }
-        .bobs-score { font-size: 2rem; color: var(--text-main); font-weight: bold; background: var(--bg-base); padding: 10px 30px; border-radius: var(--radius-md); margin-top: 15px;}
+        .atc-target-value { font-size:calc(clamp(3rem, 10vw, 7rem) * var(--match-ui-scale, 1)); font-weight: 900; color: var(--accent-blue); margin: 10px 0; line-height: 1; }
+        .bobs-score { font-size:calc(2rem * var(--match-ui-scale, 1)); color: var(--text-main); font-weight: bold; background: var(--bg-base); padding: 10px 30px; border-radius: var(--radius-md); margin-top: 15px;}
         .bobs-score.danger { color: var(--accent-red); }
 
         .atc-controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
@@ -425,7 +449,6 @@
         body.layout-mobile .header h1 { font-size: 1.6rem; margin-bottom: 10px; }
         body.layout-mobile .content-area { padding: 15px; padding-bottom: 90px; }
         body.layout-mobile .match-header { padding:8px; gap:6px; }
-        body.layout-mobile .match-header-spacer { width:24px; }
         body.layout-mobile #layout-atc-bobs { flex-direction:column; }
         body.layout-mobile .atc-side-panel { flex:0 1 auto; min-height:0; }
         body.layout-mobile .atc-main-panel { flex:0 0 auto; padding:10px; }
@@ -434,6 +457,7 @@
         body.layout-mobile .input-zone { padding:8px; gap:6px; }
         body.layout-mobile .numpad { gap: 5px; }
         body.layout-mobile .btn-num { padding: 12px 0; font-size: 1.3rem; }
+        body.layout-mobile .btn-num.score-number { font-size:calc(1.3rem * var(--match-ui-scale, 1)); }
         body.layout-mobile .dart-slot { height: 40px; font-size: 0.88rem; }
         body.layout-mobile .pad-container { padding: 10px; gap: 8px; }
         body.layout-mobile .btn-play { padding: 15px; font-size: 1.2rem; }
@@ -683,7 +707,18 @@
                 <h2 id="ui-match-title">Set 1, Leg 1</h2>
                 <p id="ui-match-format">501 - First to 3 Legs</p>
             </div>
-            <div class="match-header-spacer" aria-hidden="true"></div>
+            <div class="match-display-controls">
+                <div id="match-scale-panel" class="match-scale-panel" hidden>
+                    <input id="match-scale" class="match-scale-input" type="range" min="80" max="125" step="5" value="100" aria-label="Anzeigengröße">
+                    <span id="match-scale-value" class="match-scale-value" aria-hidden="true">100 %</span>
+                </div>
+                <button id="match-scale-toggle" class="match-scale-toggle" type="button" aria-label="Anzeigengröße anpassen" title="Anzeigengröße anpassen" aria-expanded="false" aria-controls="match-scale-panel">
+                    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+                        <path d="M3 6h4m4 0h10M3 12h11m4 0h3M3 18h7m4 0h7"/>
+                        <circle cx="9" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="12" cy="18" r="2"/>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <div id="layout-x01" class="layout-container">
@@ -707,7 +742,7 @@
                     <button class="btn-num btn-bull" id="btn-bull" onclick="throwDart(25)">BULL</button>
                     <button class="btn-num btn-miss" onclick="throwDart(0)">MISS</button>
                     <button class="btn-num btn-mod" id="btn-checkout-intent" onclick="toggleCheckoutIntent()" title="Diesen Dart als Versuch auf das Checkout-Doppel zählen" aria-pressed="false" style="visibility:hidden;"></button>
-                    <script>for(let i=1; i<=20; i++) document.write(`<button class="btn-num" onclick="throwDart(${i})">${i}</button>`);</script>
+                    <script>for(let i=1; i<=20; i++) document.write(`<button class="btn-num score-number" onclick="throwDart(${i})">${i}</button>`);</script>
                 </div>
                 </div><!-- /.input-zone -->
             </div>
@@ -1138,6 +1173,45 @@
             } else {
                 document.body.classList.remove('layout-mobile');
             }
+        }
+
+        function setMatchScalePanelOpen(open) {
+            document.getElementById('match-scale-panel').hidden = !open;
+            document.getElementById('match-scale-toggle').setAttribute('aria-expanded', open);
+        }
+
+        function initMatchDisplayScale() {
+            const slider = document.getElementById('match-scale');
+            const panel = document.getElementById('match-scale-panel');
+            const toggle = document.getElementById('match-scale-toggle');
+            const valueLabel = document.getElementById('match-scale-value');
+            const screen = document.getElementById('match-screen');
+            const preferenceKey = 'dart_match_ui_size';
+            const saved = readStoredJSON(preferenceKey, 100);
+            slider.value = Number.isFinite(saved) ? saved : 100;
+
+            function applyScale() {
+                const percent = slider.valueAsNumber;
+                screen.style.setProperty('--match-ui-scale', percent / 100);
+                valueLabel.textContent = `${percent} %`;
+                slider.setAttribute('aria-valuetext', `${percent} Prozent`);
+            }
+
+            toggle.addEventListener('click', () => {
+                const open = panel.hidden;
+                setMatchScalePanelOpen(open);
+                if (open) slider.focus({ preventScroll: true });
+            });
+            toggle.parentElement.addEventListener('keydown', event => {
+                if (event.key !== 'Escape' || panel.hidden) return;
+                setMatchScalePanelOpen(false);
+                toggle.focus({ preventScroll: true });
+            });
+            slider.addEventListener('input', applyScale);
+            slider.addEventListener('change', () => {
+                try { localStorage.setItem(preferenceKey, slider.value); } catch {}
+            });
+            applyScale();
         }
 
         function toggleGlobalSettings() {
@@ -1836,6 +1910,7 @@
         }
 
         function showMatchScreen() {
+            setMatchScalePanelOpen(false);
             document.getElementById('hub-screen').style.display = 'none';
             document.getElementById('match-screen').style.display = 'flex';
         }
@@ -2637,7 +2712,7 @@
                     container.innerHTML += `
                         <div class="board ${activeCls} ${scrollCls}" id="board-${i}">
                             <div class="board-name"><span class="avatar" style="font-size:1rem;">${playerAvatar(p)}</span><span class="board-name-text">${escapeHTML(p.name)}</span></div>
-                            <div class="board-score" id="score-el-${i}" data-score="${p.score}">${p.score}</div>
+                            <div class="board-score" id="score-el-${i}" data-score="${p.score}" style="--score-characters:${String(p.score).length}">${p.score}</div>
                             <div class="board-legs">${formatHtml}</div>
                             <div class="board-stats"><div class="stat-box">AVG <span>${avg}</span></div><div class="stat-box">DARTS <span>${p.legDarts}</span></div>${doublesHtml}</div>
                         </div>`;
@@ -2665,7 +2740,8 @@
                 if (routes.length > 0) {
                     let inner = `<div class="checkout-options-row">`;
                     routes.forEach((r, i) => {
-                        inner += `<div class="checkout-box ${i ? 'alt' : ''}"><div class="checkout-box-route">${r.replaceAll(' - ', ' · ')}</div></div>`;
+                        const route = r.replaceAll(' - ', ' · ');
+                        inner += `<div class="checkout-box ${i ? 'alt' : ''}"><div class="checkout-box-route" style="--route-characters:${route.length}">${route}</div></div>`;
                     });
                     inner += `</div>`;
                     if (killHints.length > 0) {
@@ -2786,6 +2862,7 @@
             } catch(e) { console.error("Fehler beim Laden der Settings", e); }
         }
         loadGameSettings();
+        initMatchDisplayScale();
         restoreActiveMatch();
         document.getElementById('match-screen').addEventListener('keydown', event => {
             if (event.repeat && (event.key === 'Enter' || event.key === ' ') && event.target.matches('button')) {
