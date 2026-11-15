@@ -148,6 +148,7 @@
         .btn-abort:hover { background: var(--border-color); color: var(--text-main); }
 
         .match-display-controls { display:flex; min-width:0; justify-content:flex-end; align-items:center; gap:6px; }
+        .match-display-controls[hidden] { display:none; }
         .match-scale-toggle { display:grid; place-items:center; flex:0 0 44px; height:44px; border:1px solid var(--border-color);
             border-radius:var(--radius-md); background:var(--card-bg); color:var(--text-muted); cursor:pointer; }
         .match-scale-toggle[aria-expanded="true"] { color:var(--accent-blue); border-color:var(--accent-blue); background:var(--blue-tint); }
@@ -165,9 +166,10 @@
             .match-scale-value { display:none; }
         }
 
-        /* Score and keypad share the viewport. Cards keep their natural height. */
-        #layout-x01 { min-height: 0; overflow: auto; }
-        .boards-container { display:flex; flex:0 0 auto; gap:8px; padding:10px 12px; overflow-x:auto; }
+        /* Split the height above the minimum sizes between the scores and the keypad. */
+        #layout-x01 { --score-share:0; min-height:0; overflow:auto; }
+        .score-area { display:flex; flex-direction:column; flex:var(--score-share) 0 auto; }
+        .boards-container { display:flex; flex:4 0 auto; gap:8px; padding:10px 12px; overflow-x:auto; background:var(--bg-base); }
         .board { container-type:inline-size; position:relative; display:flex; flex:1 0 0; min-width:140px; flex-direction:column; overflow:hidden;
             border:1px solid var(--border-color); border-radius:var(--radius-lg); background:var(--card-bg); }
         .board.scroll-mode { flex-basis:calc((100% - 40px) / 6); }
@@ -176,10 +178,10 @@
         .board-name { display:flex; justify-content:center; align-items:center; gap:6px; padding:7px 8px;
             font-size:clamp(0.85rem, 1.7vw, 1.15rem); font-weight:700; border-bottom:1px solid var(--border-color); }
         .board-name-text { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .board-score { display:grid; place-items:center; flex:1; padding:4px 4px 3px;
-            font-size:calc(clamp(2.1rem, min(6vh, 7.5vw), 4rem) * var(--match-ui-scale, 1));
-            font-size:min(calc(clamp(2.1rem, min(6dvh, 7.5vw), 4rem) * var(--match-ui-scale, 1)),
-                calc((160cqi - 8px) / var(--score-characters))); line-height:1; font-weight:900; font-variant-numeric:tabular-nums; }
+        .board-score { --score-font:clamp(2.1rem, min(6dvh, 7.5vw), 4rem);
+            container-type:size; display:grid; place-items:center; flex:1; min-height:calc(var(--score-font) + 7px); padding:4px 4px 3px;
+            font-size:var(--score-font); line-height:1; font-weight:900; font-variant-numeric:tabular-nums; }
+        .board-score-value { font-size:min(max(var(--score-font), 80cqh), calc(160cqi / var(--score-characters))); }
         .board-legs { display:flex; justify-content:center; align-items:center; padding:5px 5px;
             font-size:0.8rem; color:var(--text-muted); background:var(--bg-base); border-top:1px solid var(--border-color); }
         .board-progress, .board-progress-group, .progress-dots { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; }
@@ -194,24 +196,42 @@
         .stat-box span { font-size:clamp(0.88rem, 1.7vw, 1.12rem); line-height:1.15; color:var(--text-main); font-variant-numeric:tabular-nums; }
 
         .pad-container { background:var(--card-bg); padding:15px; border-top:1px solid var(--border-color); display:flex; flex-direction:column; gap:12px; flex:1; justify-content:flex-end; }
-        #layout-x01 .pad-container { padding:8px 12px 12px; gap:8px; justify-content:stretch; }
-        #layout-x01 .input-zone { flex:1; padding:8px; gap:8px; }
-        #layout-x01 .numpad { flex:1; grid-template-rows:repeat(5, minmax(44px, 1fr)); gap:7px; }
+        #layout-x01 .pad-container { flex:calc(1 - var(--score-share)) 0 auto; padding:0 12px 12px;
+            border-top:0; justify-content:stretch; }
+        #layout-x01 .input-zone { position:relative; flex:1 0 auto; padding:8px; gap:8px; }
+        #layout-x01 .numpad { --key-rows:5; --key-min:44px; --key-gap:7px;
+            min-height:calc(var(--key-rows) * var(--key-min) + (var(--key-rows) - 1) * var(--key-gap));
+            flex:1 0 0; grid-template-rows:repeat(var(--key-rows), minmax(var(--key-min), 1fr)); gap:var(--key-gap); }
         #layout-x01 .btn-num { padding:1px 0; }
+        #layout-x01 .score-number { container-type:size; display:grid; place-items:center; }
+        #layout-x01 .score-number span { font-size:clamp(1.1rem, 38cqh, 1.9rem); }
+        body.layout-mobile #layout-x01 .score-number span { font-size:clamp(1.1rem, 38cqh, 1.55rem); }
+        #layout-x01 #btn-checkout-intent { font-size:clamp(0.65rem, 1.5vw, 1rem); padding-inline:2px; }
+
+        .input-resize { display:none; }
+        #layout-x01 .input-resize { display:block; position:absolute; inset:-17px 0 auto; height:24px;
+            z-index:1; cursor:row-resize; touch-action:none; outline:none; }
+        .input-resize::after { content:''; position:absolute; top:15px; left:50%; transform:translateX(-50%);
+            width:48px; height:3px; border-radius:999px; background:var(--accent-blue); opacity:0; }
+        .input-resize:focus-visible::after, .input-resize[data-dragging]::after { opacity:1; }
+        @media (hover:hover) { .input-resize:hover::after { opacity:1; } }
         #layout-x01 .btn-mod, #layout-x01 .btn-bull, #layout-x01 .btn-miss { font-size:clamp(0.66rem, 1.65vw, 1.12rem); }
 
-        .checkout-guide { --checkout-font:calc(clamp(0.74rem, 2vw, 1.5rem) * var(--match-ui-scale, 1));
-            --checkout-height:max(40px, calc(var(--checkout-font) * 1.1 + 10px));
-            display:flex; flex-direction:column; justify-content:center; gap:3px; min-height:var(--checkout-height); flex-shrink:0; }
-        .checkout-options-row { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0, 1fr); gap:6px; }
-        .checkout-box { container-type:inline-size; display:grid; place-items:center; min-height:var(--checkout-height); padding:4px;
+        .checkout-guide { --checkout-font:clamp(0.74rem, 2vw, 1.5rem); --checkout-height:40px;
+            display:flex; flex-direction:column; justify-content:center; gap:3px; padding:8px 12px;
+            min-height:calc(var(--checkout-height) + 17px); flex:1 0 auto;
+            border-top:1px solid var(--border-color); background:var(--card-bg); }
+        .checkout-guide:empty { flex-grow:0; }
+        .checkout-options-row { display:grid; flex:1; grid-auto-flow:column; grid-auto-columns:minmax(0, 1fr); gap:6px; }
+        .checkout-box { container-type:size; display:grid; place-items:center; min-height:var(--checkout-height); padding:4px;
             border:1px solid var(--checkout-border); border-radius:var(--radius-md); background:var(--checkout-tint); color:var(--accent-orange); }
         .checkout-box.alt { background:var(--bg-base); border-color:var(--border-color); }
-        .checkout-box-route { font-size:var(--checkout-font); font-size:min(var(--checkout-font), calc(180cqi / var(--route-characters)));
+        .checkout-box-route { font-size:var(--checkout-font);
+            font-size:min(max(var(--checkout-font), 68cqh), calc(180cqi / var(--route-characters)));
             font-weight:800; line-height:1.1; text-align:center; }
         .checkout-primary, .checkout-secondary { text-align:center; color:var(--accent-orange); font-weight:700; }
-        .checkout-primary { font-size:calc(1rem * var(--match-ui-scale, 1)); }
-        .checkout-secondary { font-size:calc(0.75rem * var(--match-ui-scale, 1)); }
+        .checkout-primary { font-size:1rem; }
+        .checkout-secondary { font-size:0.75rem; }
 
         /* ── Input-Zone: Rahmen um Darts-Display + Numpad ───────────────── */
         .input-zone {
@@ -296,6 +316,7 @@
             .input-zone .turn-bar:has(#turn-feedback:empty) { display:none; }
             #layout-x01 .boards-container { padding-inline:8px; }
             #layout-x01 .pad-container { padding-inline:8px; }
+            .checkout-guide { padding-inline:8px; }
         }
         #turn-feedback { font-size:0.85rem; line-height:1.15; color:var(--text-muted); overflow:hidden; }
         #turn-feedback[data-outcome="bust"], #turn-feedback[data-outcome="eliminated"] { color:var(--accent-red); }
@@ -722,10 +743,15 @@
         </div>
 
         <div id="layout-x01" class="layout-container">
-            <div class="boards-container" id="ui-boards-x01"></div>
-            <div class="pad-container">
+            <div class="score-area" id="match-score-area">
+                <div class="boards-container" id="ui-boards-x01"></div>
                 <div class="checkout-guide" id="ui-checkout"></div>
+            </div>
+            <div class="pad-container">
                 <div class="input-zone">
+                <div id="input-resize" class="input-resize" role="separator" aria-orientation="horizontal"
+                     aria-label="Platz für Scores und Checkouts" aria-controls="match-score-area"
+                     aria-valuemin="0" aria-valuemax="100" aria-valuenow="12" tabindex="0"></div>
                 <div class="current-darts-display">
                     <div class="dart-entry-history">
                     <button class="btn-back" onclick="undoDart()" title="Rückgängig">
@@ -742,7 +768,7 @@
                     <button class="btn-num btn-bull" id="btn-bull" onclick="throwDart(25)">BULL</button>
                     <button class="btn-num btn-miss" onclick="throwDart(0)">MISS</button>
                     <button class="btn-num btn-mod" id="btn-checkout-intent" onclick="toggleCheckoutIntent()" title="Diesen Dart als Versuch auf das Checkout-Doppel zählen" aria-pressed="false" style="visibility:hidden;"></button>
-                    <script>for(let i=1; i<=20; i++) document.write(`<button class="btn-num score-number" onclick="throwDart(${i})">${i}</button>`);</script>
+                    <script>for(let i=1; i<=20; i++) document.write(`<button class="btn-num score-number" onclick="throwDart(${i})"><span>${i}</span></button>`);</script>
                 </div>
                 </div><!-- /.input-zone -->
             </div>
@@ -1212,6 +1238,71 @@
                 try { localStorage.setItem(preferenceKey, slider.value); } catch {}
             });
             applyScale();
+        }
+
+        function initMatchSplit() {
+            const layout = document.getElementById('layout-x01');
+            const line = document.getElementById('input-resize');
+            const keypad = document.getElementById('numpad-container');
+            const preferenceKey = 'dart_match_score_split';
+            // Keep a small share of spare height in the keypad. The five rows also have a fixed minimum.
+            const maxScoreShare = 0.92;
+            const defaultPosition = 12;
+            let position;
+            let drag = null;
+
+            function setPosition(value) {
+                position = Math.min(100, Math.max(0, value));
+                layout.style.setProperty('--score-share', maxScoreShare * position / 100);
+                line.setAttribute('aria-valuenow', Math.round(position));
+            }
+
+            function savePosition() {
+                try { localStorage.setItem(preferenceKey, position.toFixed(2)); } catch {}
+            }
+
+            const saved = readStoredJSON(preferenceKey, defaultPosition);
+            setPosition(Number.isFinite(saved) ? saved : defaultPosition);
+
+            line.addEventListener('pointerdown', event => {
+                if (!event.isPrimary || event.button !== 0 || drag) return;
+                const minKeypadHeight = parseFloat(getComputedStyle(keypad).minHeight);
+                const extraKeypadHeight = keypad.getBoundingClientRect().height - minKeypadHeight;
+                const keypadShare = 1 - maxScoreShare * position / 100;
+                const travel = maxScoreShare * extraKeypadHeight / keypadShare;
+                if (travel < 1) return;
+
+                event.preventDefault();
+                line.setPointerCapture(event.pointerId);
+                drag = { id: event.pointerId, startY: event.clientY, startPosition: position, travel };
+                line.dataset.dragging = '';
+            });
+
+            function moveSplit(event) {
+                if (drag?.id !== event.pointerId) return;
+                setPosition(drag.startPosition + (event.clientY - drag.startY) / drag.travel * 100);
+            }
+
+            function finishDrag(event) {
+                if (drag?.id !== event.pointerId) return;
+                if (event.type === 'pointerup') moveSplit(event);
+                if (position !== drag.startPosition) savePosition();
+                drag = null;
+                delete line.dataset.dragging;
+            }
+
+            line.addEventListener('pointermove', moveSplit);
+            line.addEventListener('pointerup', finishDrag);
+            line.addEventListener('pointercancel', finishDrag);
+            line.addEventListener('lostpointercapture', finishDrag);
+
+            line.addEventListener('keydown', event => {
+                const steps = { ArrowUp: position - 5, ArrowDown: position + 5, Home: 0, End: 100 };
+                if (!Object.hasOwn(steps, event.key)) return;
+                event.preventDefault();
+                setPosition(steps[event.key]);
+                savePosition();
+            });
         }
 
         function toggleGlobalSettings() {
@@ -2508,7 +2599,7 @@
             const pad = document.querySelector('.pad-container');
             const scoringLayout = document.getElementById(layout === 'cricket' ? 'layout-cricket' : 'layout-x01');
             scoringLayout.appendChild(pad);
-            document.getElementById('ui-checkout').style.display = layout === 'cricket' ? 'none' : '';
+            document.querySelector('.match-display-controls').hidden = layout === 'x01' || layout === 'elimination';
             const turnBar = document.getElementById('turn-bar');
             if (layout === 'atc' || layout === 'bobs27') {
                 const nextControl = document.getElementById(layout === 'atc' ? 'controls-atc' : 'controls-bobs');
@@ -2712,7 +2803,7 @@
                     container.innerHTML += `
                         <div class="board ${activeCls} ${scrollCls}" id="board-${i}">
                             <div class="board-name"><span class="avatar" style="font-size:1rem;">${playerAvatar(p)}</span><span class="board-name-text">${escapeHTML(p.name)}</span></div>
-                            <div class="board-score" id="score-el-${i}" data-score="${p.score}" style="--score-characters:${String(p.score).length}">${p.score}</div>
+                            <div class="board-score" id="score-el-${i}" data-score="${p.score}" style="--score-characters:${String(p.score).length}"><span class="board-score-value">${p.score}</span></div>
                             <div class="board-legs">${formatHtml}</div>
                             <div class="board-stats"><div class="stat-box">AVG <span>${avg}</span></div><div class="stat-box">DARTS <span>${p.legDarts}</span></div>${doublesHtml}</div>
                         </div>`;
@@ -2863,6 +2954,7 @@
         }
         loadGameSettings();
         initMatchDisplayScale();
+        initMatchSplit();
         restoreActiveMatch();
         document.getElementById('match-screen').addEventListener('keydown', event => {
             if (event.repeat && (event.key === 'Enter' || event.key === ' ') && event.target.matches('button')) {
